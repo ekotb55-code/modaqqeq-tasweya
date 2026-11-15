@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>تسوية الدعم - مدقق</title>
+<meta name="theme-color" content="#1479D3">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="تسوية الدعم">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="/modaqqeq-dashboard/icon-192.png">
+<link rel="apple-touch-icon" href="/modaqqeq-dashboard/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap">
+<style>
+  :root {
+    --blue: #1479D3; --blue-d: #0E5EA8; --ink: #1B2430; --mute: #6B7785; --line: #E3EAF2;
+    --bg: #F3F7FC; --card: #fff; --ok: #1E9E5A; --okbg: #E7F6EE; --bad: #D64545; --badbg: #FDECEC;
+    --warn: #B7791F; --warnbg: #FFF6E5;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: 'Cairo', Tahoma, sans-serif; font-size: 15px; }
+  button, input, select { font-family: inherit; font-size: inherit; }
+  .hidden { display: none !important; }
+  .num { direction: ltr; unicode-bidi: isolate; font-variant-numeric: tabular-nums; }
+
+  /* الدخول */
+  #login { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .login-card { width: 100%; max-width: 380px; background: var(--card); border-radius: 18px; padding: 28px 22px; box-shadow: 0 8px 30px rgba(20,121,211,.10); }
+  .login-card img { display: block; width: 190px; margin: 0 auto 6px; }
+  .login-card h1 { text-align: center; font-size: 19px; margin: 4px 0 20px; color: var(--blue-d); }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 13px; color: var(--mute); margin-bottom: 4px; }
+  .field input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 12px; background: #fff; outline: none; }
+  .field input:focus { border-color: var(--blue); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 0; border-radius: 12px; padding: 11px 16px; font-weight: 700; cursor: pointer; background: var(--blue); color: #fff; }
+  .btn:disabled { opacity: .55; }
+  .btn.block { width: 100%; }
+  .btn.ghost { background: #fff; color: var(--blue); border: 1.5px solid var(--line); }
+  .btn.ok { background: var(--ok); }
+  .btn.bad { background: #fff; color: var(--bad); border: 1.5px solid #F2C9C9; }
+  .btn.sm { padding: 7px 12px; font-size: 13px; border-radius: 10px; }
+  .err { color: var(--bad); font-size: 13px; min-height: 20px; margin-top: 8px; text-align: center; }
+  .install-login { margin-top: 12px; }
+
+  /* الهيدر */
+  header { position: sticky; top: 0; z-index: 20; background: var(--blue); color: #fff; padding: calc(env(safe-area-inset-top) + 10px) 14px 10px; }
+  .hrow { display: flex; align-items: center; gap: 8px; }
+  .hrow .title { flex: 1; min-width: 0; }
+  .hrow .title b { display: block; font-size: 17px; }
+  .hrow .title span { font-size: 12px; opacity: .85; }
+  .icon-btn { width: 40px; height: 40px; border-radius: 12px; border: 0; background: rgba(255,255,255,.16); color: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex: none; text-decoration: none; }
+  .icon-btn svg { width: 22px; height: 22px; }
+  .strip { margin-top: 10px; }
+  .strip .row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+  .strip .row .t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .strip .track { height: 6px; background: rgba(255,255,255,.28); border-radius: 99px; overflow: hidden; margin-top: 5px; }
+  .strip .track i { display: block; height: 100%; width: 0; background: #fff; border-radius: 99px; transition: width .35s; }
+  .strip.busy .track i.ind { width: 35% !important; animation: ind 1.1s ease-in-out infinite; }
+  @keyframes ind { 0% { transform: translateX(-120%); } 100% { transform: translateX(320%); } }
+
+  /* التابات */
+  .tabs { display: flex; gap: 6px; padding: 10px 12px 2px; position: sticky; top: var(--hh, 112px); z-index: 10; background: var(--bg); }
+  .tab { flex: 1; border: 1.5px solid var(--line); background: #fff; color: var(--ink); border-radius: 12px; padding: 8px 4px; font-weight: 700; font-size: 13px; cursor: pointer; text-align: center; }
+  .tab.on { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .tab .n { display: inline-block; min-width: 20px; padding: 0 6px; border-radius: 99px; background: var(--line); color: var(--ink); font-size: 12px; margin-inline-start: 4px; }
+  .tab.on .n { background: rgba(255,255,255,.25); color: #fff; }
+  .tab .n.hot { background: var(--warn); color: #fff; }
+
+  main { padding: 6px 12px calc(env(safe-area-inset-bottom) + 40px); max-width: 720px; margin: 0 auto; }
+  .card { background: var(--card); border-radius: 14px; padding: 12px 14px; margin: 10px 0; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+  .sec-head { display: flex; align-items: center; gap: 8px; margin: 14px 2px 4px; }
+  .sec-head h2 { flex: 1; margin: 0; font-size: 16px; color: var(--blue-d); }
+  .hint { color: var(--mute); font-size: 12.5px; margin: 2px 2px 6px; line-height: 1.7; }
+  .empty { text-align: center; color: var(--mute); padding: 30px 16px; }
+
+  /* الفروع */
+  .br { display: flex; align-items: center; gap: 10px; }
+  .br .nm { flex: 1; min-width: 0; }
+  .br .nm b { display: block; font-size: 15.5px; }
+  .br .nm small { color: var(--mute); font-size: 12px; }
+  .bal { font-weight: 800; font-size: 16px; }
+  .bal.zero { color: var(--ok); }
+  .bal.nz { color: var(--bad); }
+
+  /* الحركات */
+  .mv { display: flex; gap: 10px; align-items: flex-start; }
+  .mv input[type=checkbox] { width: 22px; height: 22px; margin-top: 2px; flex: none; accent-color: var(--ok); }
+  .mv .body { flex: 1; min-width: 0; }
+  .mv .top { display: flex; align-items: baseline; gap: 8px; }
+  .mv .top b { flex: 1; }
+  .amt { font-weight: 800; font-size: 16px; }
+  .meta { color: var(--mute); font-size: 12px; margin-top: 2px; line-height: 1.6; word-break: break-word; }
+  .will { margin-top: 6px; font-size: 13.5px; }
+  .pill { display: inline-block; border-radius: 99px; padding: 0 10px; font-size: 12.5px; font-weight: 700; }
+  .p-in { background: var(--okbg); color: var(--ok); }
+  .p-out { background: var(--badbg); color: var(--bad); }
+  .p-q { background: var(--warnbg); color: var(--warn); }
+  .group-head { display: flex; align-items: center; gap: 8px; margin: 16px 2px 2px; font-weight: 800; }
+  .group-head span { flex: 1; }
+  .card.q { border: 1.5px solid #F3DDB3; background: #FFFCF6; }
+  .q .msg { color: var(--warn); font-weight: 700; font-size: 13.5px; margin: 6px 0 8px; }
+  .q .ctrls { display: grid; grid-template-columns: 110px 1fr; gap: 8px; }
+  .q select { width: 100%; padding: 10px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; }
+  .q .rule { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--mute); margin: 8px 0; }
+  .q .rule input { width: 18px; height: 18px; }
+  .q .btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .q .btns .btn { flex: 1; }
+  .done-row { display: flex; gap: 8px; align-items: flex-start; }
+  .done-row .body { flex: 1; min-width: 0; }
+
+  /* نوافذ */
+  .modal-bg { position: fixed; inset: 0; z-index: 90; background: rgba(0,0,0,.45); display: flex; align-items: flex-end; justify-content: center; }
+  .modal { background: #fff; width: 100%; max-width: 480px; border-radius: 18px 18px 0 0; padding: 18px 16px calc(env(safe-area-inset-bottom) + 16px); }
+  .modal h3 { margin: 0 0 8px; color: var(--blue-d); font-size: 17px; }
+  .modal p { margin: 0 0 12px; line-height: 1.8; }
+  .modal input { width: 100%; padding: 12px; border: 1.5px solid var(--line); border-radius: 12px; margin-bottom: 12px; }
+  .modal .btns { display: flex; gap: 8px; }
+  .modal .btns .btn { flex: 1; }
+  #toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 22px); transform: translateX(-50%); background: #1B2430; color: #fff; padding: 10px 18px; border-radius: 12px; z-index: 100; max-width: 92vw; text-align: center; font-size: 14px; box-shadow: 0 6px 20px rgba(0,0,0,.2); line-height: 1.7; }
+  #toast.ok { background: var(--ok); }
+  #toast.bad { background: var(--bad); }
+  #installHelp { position: fixed; inset: 0; z-index: 95; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 20px; }
+  #installHelp .box { background: #fff; border-radius: 16px; padding: 20px; max-width: 360px; line-height: 2; font-size: 15px; }
+  #installHelp h3 { margin: 0 0 8px; color: var(--blue-d); }
+</style>
+</head>
+<body>
+
+<!-- الدخول -->
+<section id="login" class="hidden">
+  <div class="login-card">
+    <img src="/modaqqeq-dashboard/logo_wide.png" alt="مدقق">
+    <h1>تسوية خزنة الدعم</h1>
+    <form id="loginForm" autocomplete="on">
+      <div class="field"><label>الاسم</label><input id="lName" autocomplete="username" required></div>
+      <div class="field"><label>كلمة السر</label><input id="lPass" type="password" autocomplete="current-password" required></div>
+      <button class="btn block" id="lBtn" type="submit">دخول</button>
+      <div class="err" id="lErr"></div>
+    </form>
+    <button class="btn ghost block install-login" id="installBtn2" type="button">📲 تثبيت التطبيق على الموبايل</button>
+  </div>
+</section>
+
+<!-- الشاشة الرئيسية -->
+<section id="main" class="hidden">
+  <header id="hdr">
+    <div class="hrow">
+      <div class="title"><b>تسوية الدعم</b><span id="who"></span></div>
+      <button class="icon-btn hidden" id="installBtn" title="تثبيت التطبيق على الموبايل">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M12 7v7M9 11l3 3 3-3"/><path d="M10.5 18.5h3"/></svg>
+      </button>
+      <a class="icon-btn hidden" id="sheetBtn" href="#" target="_blank" rel="noopener" title="فتح الشيت">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 3v18"/></svg>
+      </a>
+      <button class="icon-btn" id="btnRefresh" title="تحديث">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+      </button>
+      <button class="icon-btn" id="btnOut" title="خروج">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M8 7l-5 5 5 5"/><path d="M3 12h12"/></svg>
+      </button>
+    </div>
+    <div class="strip hidden" id="strip">
+      <div class="row"><span class="t" id="stripT"></span></div>
+      <div class="track"><i id="stripI"></i></div>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab on" data-tab="branches">الفروع</button>
+    <button class="tab" data-tab="questions">استفسارات <span class="n" id="nQ">0</span></button>
+    <button class="tab" data-tab="pending">تأكيد <span class="n" id="nP">0</span></button>
+    <button class="tab" data-tab="recent">اللي اتعمل</button>
+  </div>
+
+  <main>
+    <div id="tab-branches">
+      <div class="sec-head"><h2>الفروع</h2><button class="btn sm" id="btnScanAll">فحص كل الفروع</button></div>
+      <div class="hint">الفحص بيقرا حركات خزنة «خاص بالدعم» من البرنامج، وبيجهّز عكسها. مفيش حاجة بتتسجّل غير لما تأكّد.</div>
+      <div id="branches"></div>
+    </div>
+    <div id="tab-questions" class="hidden">
+      <div class="sec-head"><h2>استفسارات</h2></div>
+      <div class="hint">حركات السكريبت مش متأكد منها. اختار نوع العملية والبند واعتمد، أو تجاهل الحركة.</div>
+      <div id="questions"></div>
+    </div>
+    <div id="tab-pending" class="hidden">
+      <div class="sec-head"><h2>مستنية تأكيد</h2></div>
+      <div class="hint">إيصال الصرف بيتعكس بإيراد، والاستلام بمصروف، بنفس المبلغ وعلى خزنة «خاص بالدعم».</div>
+      <div id="pending"></div>
+    </div>
+    <div id="tab-recent" class="hidden">
+      <div class="sec-head"><h2>آخر العمليات</h2></div>
+      <div id="recent"></div>
+    </div>
+  </main>
+</section>
+
+<div id="toast" class="hidden"></div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbzgkR65uNQZFEb524k8I2dOCdRJ08jrmNL5NpgFg7iwAkqUWkTKWJbtISGcO6WUaEk-/exec';
+
+const $ = id => document.getElementById(id);
+const st = { state: null, items: {}, tab: 'branches', busy: false };
+
+// ---------- أدوات ----------
+function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { return null; } }
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function toast(t, kind) { const el = $('toast'); el.textContent = t; el.className = kind || ''; clearTimeout(el._t); el._t = setTimeout(() => el.classList.add('hidden'), kind === 'bad' ? 6000 : 3500); }
+function money(v) { const n = Number(v); return isNaN(n) ? esc(v) : n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function arErr(e) {
+  const m = (e && e.message) ? e.message : String(e || '');
+  if (/Failed to fetch|NetworkError|Load failed|network/i.test(m)) return 'مفيش نت أو السيرفر مش بيرد - جرّب تاني';
+  if (/JSON|Unexpected token/i.test(m)) return 'السيرفر رد رد غريب - جرّب كمان شوية';
+  return /[a-z]{4,}/i.test(m) && !/[؀-ۿ]/.test(m) ? 'حصلت مشكلة - جرّب تاني' : m;
+}
+async function api(action, data) {
+  const body = Object.assign({ name: ls('tsw_name') || '', password: ls('tsw_pass') || '' }, data || {});
+  const res = await fetch(API + '?action=' + action, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) });
+  const j = await res.json();
+  if (!j.ok) {
+    const err = new Error(j.error || 'حصلت مشكلة');
+    if (/كلمة السر غلط|مش نشط/.test(j.error || '')) err.auth = true;
+    throw err;
+  }
+  return j.data;
+}
+function strip(text, pct) {
+  const s = $('strip');
+  if (text === null) { s.classList.add('hidden'); hh(); return; }
+  s.classList.remove('hidden');
+  $('stripT').textContent = text;
+  const i = $('stripI');
+  if (pct === undefined) { s.classList.add('busy'); i.className = 'ind'; i.style.width = ''; }
+  else { s.classList.remove('busy'); i.className = ''; i.style.width = Math.round(pct) + '%'; }
+  hh();
+}
+function hh() { document.documentElement.style.setProperty('--hh', ($('hdr').offsetHeight || 112) + 'px'); }
+
+// نافذة سؤال من تحت (بدل confirm و prompt)
+function ask(title, msg, opts) {
+  opts = opts || {};
+  return new Promise(resolve => {
+    const bg = document.createElement('div');
+    bg.className = 'modal-bg';
+    bg.innerHTML = '<div class="modal"><h3>' + esc(title) + '</h3><p>' + msg + '</p>' +
+      (opts.input ? '<input id="askIn" placeholder="' + esc(opts.input) + '">' : '') +
+      '<div class="btns"><button class="btn ' + (opts.danger ? 'bad' : 'ok') + '" id="askYes">' + esc(opts.yes || 'تمام') + '</button>' +
+      '<button class="btn ghost" id="askNo">رجوع</button></div></div>';
+    document.body.appendChild(bg);
+    const done = v => { bg.remove(); resolve(v); };
+    bg.querySelector('#askYes').onclick = () => done(opts.input ? (bg.querySelector('#askIn').value || '') : true);
+    bg.querySelector('#askNo').onclick = () => done(opts.input ? null : false);
+    bg.addEventListener('click', e => { if (e.target === bg) done(opts.input ? null : false); });
+  });
+}
+
+// ---------- الدخول ----------
+$('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  $('lErr').textContent = '';
+  $('lBtn').disabled = true; $('lBtn').textContent = 'بيدخل...';
+  ls('tsw_name', $('lName').value.trim()); ls('tsw_pass', $('lPass').value.trim());
+  try {
+    const r = await api('login', {});
+    ls('tsw_user', JSON.stringify(r));
+    afterLogin(r);
+  } catch (err) {
+    ls('tsw_pass', null);
+    $('lErr').textContent = arErr(err);
+  } finally {
+    $('lBtn').disabled = false; $('lBtn').textContent = 'دخول';
+  }
+});
+function showLogin() {
+  $('main').classList.add('hidden'); $('login').classList.remove('hidden');
+  $('lName').value = ls('tsw_name') || '';
+  showInstall();
+}
+function afterLogin(r) {
+  $('login').classList.add('hidden'); $('main').classList.remove('hidden');
+  $('who').textContent = r.name || '';
+  if (r.sheetUrl) { $('sheetBtn').href = r.sheetUrl; $('sheetBtn').classList.remove('hidden'); }
+  showInstall(); hh();
+  load();
+}
+$('btnOut').onclick = async () => {
+  if (!(await ask('خروج', 'هتخرج من التطبيق على الموبايل ده. متأكد؟', { yes: 'خروج', danger: true }))) return;
+  ls('tsw_pass', null); ls('tsw_user', null);
+  st.state = null;
+  showLogin();
+};
+
+// ---------- التحميل ----------
+async function load(quiet) {
+  if (!quiet) strip('جاري التحميل...');
+  try {
+    st.state = await api('state', {});
+    render();
+  } catch (e) {
+    if (e.auth) { ls('tsw_pass', null); showLogin(); $('lErr').textContent = arErr(e); return; }
+    toast(arErr(e), 'bad');
+  } finally {
+    if (!quiet && !st.busy) strip(null);
+  }
+}
+$('btnRefresh').onclick = () => { if (!st.busy) load(); };
+
+// ---------- التابات ----------
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => showTab(t.dataset.tab));
+function showTab(name) {
+  st.tab = name;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.tab === name));
+  ['branches', 'questions', 'pending', 'recent'].forEach(n => $('tab-' + n).classList.toggle('hidden', n !== name));
+  window.scrollTo(0, 0);
+}
+
+// ---------- الرسم ----------
+function render() {
+  const s = st.state; if (!s) return;
+  const qs = s.open.filter(m => m.status === 'استفسار' || m.status === 'خطأ');
+  const ps = s.open.filter(m => m.status === 'مقترح' || m.status === 'جاري التنفيذ');
+  $('nQ').textContent = qs.length; $('nQ').classList.toggle('hot', qs.length > 0);
+  $('nP').textContent = ps.length; $('nP').classList.toggle('hot', ps.length > 0);
+
+  // الفروع
+  $('branches').innerHTML = s.branches.length ? s.branches.map(b => {
+    const bal = b.balance === '' ? '<span class="bal">—</span>' :
+      '<span class="bal num ' + (Number(b.balance) === 0 ? 'zero' : 'nz') + '">' + money(b.balance) + '</span>';
+    return '<div class="card br"><div class="nm"><b>' + esc(b.name) + '</b><small>آخر فحص: <span class="num">' + esc(b.scanned || '—') + '</span></small></div>' +
+      bal + '<button class="btn ghost sm" data-scan="' + esc(b.name) + '">فحص</button></div>';
+  }).join('') : '<div class="empty">مفيش فروع مفعّلة — فعّلها من تاب «الفروع» في الشيت</div>';
+  $('branches').querySelectorAll('[data-scan]').forEach(b => b.onclick = () => scanList([b.dataset.scan]));
+
+  // الاستفسارات
+  $('questions').innerHTML = qs.length ? qs.map(qCard).join('') : '<div class="empty">مفيش استفسارات ✓</div>';
+  wireQuestions();
+
+  // المستنية تأكيد
+  const by = {};
+  ps.forEach(m => (by[m.branch] = by[m.branch] || []).push(m));
+  $('pending').innerHTML = Object.keys(by).length ? Object.keys(by).map(br =>
+    '<div class="group-head"><span>' + esc(br) + '</span><button class="btn ok sm" data-confirm="' + esc(br) + '">تأكيد المحدد</button></div>' +
+    by[br].map(m => {
+      const running = m.status === 'جاري التنفيذ';
+      return '<div class="card mv">' +
+        (running ? '<span class="pill p-q">جاري...</span>' : '<input type="checkbox" class="pick" data-branch="' + esc(br) + '" value="' + esc(m.id) + '" checked>') +
+        '<div class="body"><div class="top"><b>' + esc(m.vtype) + '</b><span class="amt num">' + money(m.amount) + '</span></div>' +
+        '<div class="meta">' + esc(m.bayan) + '<br>الملاحظة: «' + esc(m.note) + '»<br><span class="num">' + esc(m.stime) + '</span></div>' +
+        '<div class="will">هيتسجّل: ' + (m.op === 'إيراد' ? '<span class="pill p-in">إيراد</span>' : '<span class="pill p-out">مصروف</span>') + ' «' + esc(m.item) + '»</div>' +
+        (running ? '' : '<div style="margin-top:8px"><button class="btn bad sm" data-reject="' + esc(m.id) + '">رفض</button></div>') +
+        '</div></div>';
+    }).join('')
+  ).join('') : '<div class="empty">مفيش حركات مستنية</div>';
+  $('pending').querySelectorAll('[data-confirm]').forEach(b => b.onclick = () => confirmBranch(b.dataset.confirm, b));
+  $('pending').querySelectorAll('[data-reject]').forEach(b => b.onclick = () => reject(b.dataset.reject));
+
+  // اللي اتعمل
+  $('recent').innerHTML = s.recent.length ? s.recent.map(m =>
+    '<div class="card done-row"><div class="body"><div class="top" style="display:flex;gap:8px"><b style="flex:1">' + esc(m.branch) + '</b>' +
+    (m.status === 'تم' ? '<span class="pill p-in">تم</span>' : '<span class="pill p-q">مرفوض</span>') + '</div>' +
+    '<div class="meta">' + esc(m.msg) + '<br><span class="num">' + esc(m.doneAt) + '</span> — ' + esc(m.by) + '</div></div></div>'
+  ).join('') : '<div class="empty">لسه مفيش</div>';
+}
+
+function qCard(m) {
+  const isErr = m.status === 'خطأ';
+  return '<div class="card q" data-id="' + esc(m.id) + '" data-branch="' + esc(m.branch) + '" data-want="' + esc(m.item) + '">' +
+    '<div class="top" style="display:flex;gap:8px"><b style="flex:1">' + esc(m.branch) + ' — ' + esc(m.vtype) + '</b><span class="amt num">' + money(m.amount) + '</span></div>' +
+    '<div class="meta">' + esc(m.bayan) + '<br>الملاحظة: «' + esc(m.note) + '» — <span class="num">' + esc(m.stime) + '</span></div>' +
+    '<div class="msg">' + (isErr ? 'حصل خطأ: ' : '') + esc(m.msg) + '</div>' +
+    '<div class="ctrls"><select class="q-op"><option value="إيراد"' + (m.op === 'إيراد' ? ' selected' : '') + '>إيراد</option>' +
+    '<option value="مصروف"' + (m.op === 'مصروف' ? ' selected' : '') + '>مصروف</option></select>' +
+    '<select class="q-item"><option value="">جاري تحميل البنود...</option></select></div>' +
+    '<label class="rule"><input type="checkbox" class="q-rule"> احفظها قاعدة للكلمة دي</label>' +
+    '<div class="btns"><button class="btn ok sm q-yes">اعتمد</button><button class="btn ghost sm q-reload">تحديث البنود</button>' +
+    '<button class="btn bad sm q-no">تجاهل الحركة</button></div></div>';
+}
+
+function wireQuestions() {
+  const cards = Array.from(document.querySelectorAll('#questions .q'));
+  const branches = {};
+  cards.forEach(c => {
+    branches[c.dataset.branch] = true;
+    c.querySelector('.q-op').onchange = () => fillItems(c);
+    c.querySelector('.q-yes').onclick = () => answer(c);
+    c.querySelector('.q-no').onclick = () => reject(c.dataset.id);
+    c.querySelector('.q-reload').onclick = () => loadItems(c.dataset.branch, true);
+  });
+  Object.keys(branches).forEach(br => loadItems(br, false));
+}
+async function loadItems(br, force) {
+  const cards = Array.from(document.querySelectorAll('#questions .q')).filter(c => c.dataset.branch === br);
+  if (st.items[br] && !force) { cards.forEach(fillItems); return; }
+  if (force) cards.forEach(c => c.querySelector('.q-item').innerHTML = '<option value="">جاري تحديث البنود...</option>');
+  try {
+    st.items[br] = await api('items', { branch: br, force: !!force });
+    cards.forEach(fillItems);
+  } catch (e) {
+    cards.forEach(c => c.querySelector('.q-item').innerHTML = '<option value="">مقدرتش أحمّل البنود</option>');
+    toast(br + ': ' + arErr(e), 'bad');
+  }
+}
+function fillItems(c) {
+  const list = (st.items[c.dataset.branch] || {})[c.querySelector('.q-op').value] || [];
+  const want = c.dataset.want;
+  c.querySelector('.q-item').innerHTML = '<option value="">— اختار البند —</option>' +
+    list.map(t => '<option' + (t === want ? ' selected' : '') + '>' + esc(t) + '</option>').join('');
+}
+
+// ---------- العمليات ----------
+async function scanList(names) {
+  if (st.busy) return;
+  if (!names.length) return toast('مفيش فروع مفعّلة', 'bad');
+  st.busy = true; $('btnScanAll').disabled = true;
+  let added = 0, qs = 0; const errs = [];
+  for (let i = 0; i < names.length; i++) {
+    strip('جاري فحص ' + names[i] + ' (' + (i + 1) + ' من ' + names.length + ')', (i / names.length) * 100);
+    try {
+      const r = await api('scan', { branch: names[i] });
+      added += r.added; qs += r.questions;
+    } catch (e) { errs.push(names[i]); toast(names[i] + ': ' + arErr(e), 'bad'); }
+  }
+  strip(null); st.busy = false; $('btnScanAll').disabled = false;
+  await load(true);
+  const msg = 'خلص الفحص: ' + added + ' حركة جديدة' + (qs ? ' — منهم ' + qs + ' استفسار' : '') + (errs.length ? ' — فروع فيها مشكلة: ' + errs.join('، ') : '');
+  toast(msg, errs.length ? 'bad' : 'ok');
+  if (qs) showTab('questions'); else if (added) showTab('pending');
+}
+$('btnScanAll').onclick = () => scanList((st.state ? st.state.branches : []).map(b => b.name));
+
+async function confirmBranch(br, btn) {
+  const ids = Array.from(document.querySelectorAll('.pick')).filter(c => c.checked && c.dataset.branch === br).map(c => c.value);
+  if (!ids.length) return toast('علّم على حركة واحدة على الأقل', 'bad');
+  if (!(await ask('تأكيد التسجيل', 'هيتسجّل <b>' + ids.length + '</b> حركة في برنامج <b>' + esc(br) + '</b> على خزنة «خاص بالدعم».', { yes: 'سجّل' }))) return;
+  st.busy = true; btn.disabled = true; btn.textContent = 'جاري التسجيل...';
+  strip('جاري التسجيل في ' + br + '...');
+  try {
+    const r = await api('confirm', { branch: br, ids: ids });
+    const msg = br + ': اتسجّل ' + r.done + (r.failed ? ' — فشل ' + r.failed : '') + ' — رصيد الخزنة قبل ' + money(r.before) + ' وبعد ' + money(r.after);
+    toast(msg, (r.failed > 0 || Number(r.after) !== 0) ? 'bad' : 'ok');
+  } catch (e) { toast(arErr(e), 'bad'); }
+  st.busy = false; strip(null);
+  await load(true);
+}
+
+async function reject(id) {
+  const reason = await ask('تجاهل الحركة', 'الحركة دي مش هتتعكس. اكتب السبب لو حابب:', { input: 'السبب (اختياري)', yes: 'تجاهل', danger: true });
+  if (reason === null) return;
+  try { await api('reject', { id: id, reason: reason }); toast('الحركة اترفضت', 'ok'); }
+  catch (e) { toast(arErr(e), 'bad'); }
+  load(true);
+}
+
+async function answer(c) {
+  const op = c.querySelector('.q-op').value;
+  const item = c.querySelector('.q-item').value;
+  const rule = c.querySelector('.q-rule').checked;
+  if (!item) return toast('اختار البند الأول. لو مش موجود، ضيفه في البرنامج ودوس «تحديث البنود»', 'bad');
+  const btn = c.querySelector('.q-yes'); btn.disabled = true;
+  try {
+    await api('answer', { id: c.dataset.id, op: op, item: item, saveRule: rule });
+    toast('اتعتمد — الحركة نزلت في «تأكيد»', 'ok');
+    await load(true);
+  } catch (e) { toast(arErr(e), 'bad'); btn.disabled = false; }
+}
+
+// ---------- التثبيت على الموبايل ----------
+let installEvt = null;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+function showInstall() {
+  $('installBtn2').textContent = isStandalone() ? '✓ التطبيق متثبت على الموبايل' : '📲 تثبيت التطبيق على الموبايل';
+  $('installBtn').classList.toggle('hidden', isStandalone() || !(installEvt || isIOS || /android/i.test(navigator.userAgent)));
+}
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; showInstall(); });
+window.addEventListener('appinstalled', () => { installEvt = null; showInstall(); toast('اتثبت التطبيق ✓ هتلاقيه على الشاشة الرئيسية', 'ok'); });
+async function doInstall() {
+  if (isStandalone()) return toast('التطبيق متثبت بالفعل ✓ - افتحه من أيقونته على الشاشة الرئيسية', 'ok');
+  if (installEvt) {
+    installEvt.prompt();
+    try { await installEvt.userChoice; } catch (e) {}
+    installEvt = null; showInstall();
+    return;
+  }
+  const old = $('installHelp'); if (old) old.remove();
+  document.body.insertAdjacentHTML('beforeend', '<div id="installHelp"><div class="box"><h3>📲 تثبيت تطبيق تسوية الدعم</h3>' +
+    (isIOS ? '1️⃣ افتح الصفحة دي من <b>Safari</b><br>2️⃣ دوس زرار المشاركة <b>⬆️</b> اللي تحت<br>3️⃣ اختار <b>«إضافة إلى الشاشة الرئيسية»</b> ← <b>إضافة</b>'
+      : '1️⃣ افتح الصفحة دي من <b>Chrome</b><br>2️⃣ دوس على <b>⋮</b> اللي فوق<br>3️⃣ اختار <b>«تثبيت التطبيق»</b> أو <b>«إضافة إلى الشاشة الرئيسية»</b><br><small style="color:#6B7785">لو مكتوب «فتح في التطبيق» بدل التثبيت: اقفل الصفحة وافتحها تاني بعد دقيقة</small>') +
+    '<br><button class="btn block" style="margin-top:12px" onclick="this.closest(\'#installHelp\').remove()">تمام</button></div></div>');
+  $('installHelp').addEventListener('click', e => { if (e.target.id === 'installHelp') e.target.remove(); });
+}
+$('installBtn').onclick = doInstall;
+$('installBtn2').onclick = doInstall;
+
+// ---------- البداية ----------
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+window.addEventListener('resize', hh);
+(function start() {
+  const u = ls('tsw_user');
+  if (u && ls('tsw_pass')) {
+    try { afterLogin(JSON.parse(u)); return; } catch (e) {}
+  }
+  showLogin();
+})();
+</script>
+</body>
+</html>

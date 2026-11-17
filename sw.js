@@ -1,6 +1,6 @@
 // تطبيق تسوية الدعم: الصفحة بتتجاب من النت الأول (علشان أي تحديث يظهر على طول)، ولو النت قاطع بتفتح آخر نسخة محفوظة
-const CACHE = 'modaqqeq-tasweya-v1';
-const SHELL = ['./', './index.html', './manifest.webmanifest', '/modaqqeq-dashboard/icon-192.png', '/modaqqeq-dashboard/logo_wide.png'];
+const CACHE = 'modaqqeq-tasweya-v2';
+const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './logo-white.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });

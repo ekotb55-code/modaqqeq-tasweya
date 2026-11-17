@@ -162,20 +162,42 @@
   .op-out { background: linear-gradient(135deg, #F0504F, #C62828); }
   .op-tr { background: linear-gradient(135deg, #8B6CF0, #5B3CC4); }
   .wmsg { margin-top: 6px; font-size: 12.5px; font-weight: 800; color: #C62828; background: #FDECEC; border-radius: 10px; padding: 5px 9px; }
-  .q { border: 1.5px solid #F3D9AE; background: linear-gradient(135deg, #FFFBF3, #FFF4E2); border-radius: 12px; padding: 9px 9px; margin: 7px 0; }
-  .q .msg { color: #B35F00; font-weight: 800; font-size: 13px; margin: 6px 0 8px; }
-  .q .ctrls { display: grid; grid-template-columns: 1fr; gap: 6px; }
-  .q select { width: 100%; padding: 8px; border: 1.5px solid #EBD7B4; border-radius: 10px; background: #fff; }
-  .q .rule { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--mute); margin: 8px 0; }
-  .q .rule input { width: 18px; height: 18px; accent-color: var(--orange); }
-  .q .btns { display: flex; gap: 8px; flex-wrap: wrap; }
-  .q .btns .btn { flex: 1; min-width: 64px; padding: 7px 8px; }
-  .dn { border-radius: 12px; padding: 8px 9px; margin: 7px 0; border: 1.5px solid #BFE5CB; background: linear-gradient(90deg, #fff, #F1FBF4); font-size: 13px; }
-  .dn.rej { border-color: #F4CACA; background: linear-gradient(90deg, #fff, #FFF5F5); }
-  .dn .top b { font-size: 13px; }
-  .dn .tag { font-size: 11px; font-weight: 800; border-radius: 99px; padding: 0 8px; background: #E5F6EB; color: #1A8A3E; white-space: nowrap; }
-  .dn.rej .tag { background: #FDECEC; color: #C62828; }
-  .dn small { display: block; color: var(--mute); font-size: 11.5px; margin-top: 2px; }
+
+  /* ===== الكروت المختصرة ===== */
+  .card { border-radius: 12px; margin: 7px 0; border: 1.5px solid #E1E8F1; background: #fff; overflow: hidden; }
+  .card .sum { display: flex; align-items: center; gap: 7px; padding: 8px 9px; cursor: pointer; }
+  .card .dir { width: 24px; height: 24px; border-radius: 8px; flex: none; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; color: #fff; }
+  .dir.out { background: linear-gradient(135deg, #F0504F, #C62828); }
+  .dir.in { background: linear-gradient(135deg, #2BB45A, #1A8A3E); }
+  .card .tx { flex: 1; min-width: 0; }
+  .card .tx .a { font-weight: 900; font-size: 15px; display: block; line-height: 1.3; }
+  .card .tx .n { display: block; font-size: 12.5px; color: #4A5868; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card .chev { width: 18px; height: 18px; color: #A0ABB8; flex: none; transition: transform .2s; }
+  .card.open .chev { transform: rotate(180deg); }
+  .card .more { display: none; padding: 0 9px 9px; border-top: 1px dashed #E6ECF3; }
+  .card.open .more { display: block; }
+  .card .will { margin: 0; padding: 0 9px 8px 9px; font-size: 12.5px; }
+  .card .wshort { margin: 0 9px 8px; font-size: 11.5px; font-weight: 800; color: #C62828; background: #FDECEC; border-radius: 8px; padding: 3px 8px; }
+  .card input.pick { width: 21px; height: 21px; flex: none; accent-color: var(--green); margin: 0; }
+  .card.cq { border-color: #F3D9AE; background: linear-gradient(135deg, #FFFCF6, #FFF6E8); }
+  .card.cp { border-color: #CFE3FA; background: linear-gradient(90deg, #fff, #F6FAFF); }
+  .card.cp.warn { border-color: #F6C9C9; background: linear-gradient(90deg, #fff, #FFF6F6); }
+  .card.cd { border-color: #BFE5CB; background: linear-gradient(90deg, #fff, #F1FBF4); }
+  .card.cd.rej { border-color: #F4CACA; background: linear-gradient(90deg, #fff, #FFF5F5); }
+  .card .tag { font-size: 11px; font-weight: 800; border-radius: 99px; padding: 0 8px; background: #E5F6EB; color: #1A8A3E; white-space: nowrap; flex: none; }
+  .card.rej .tag { background: #FDECEC; color: #C62828; }
+  .card .q-msg { color: #B35F00; font-weight: 800; font-size: 12.5px; margin: 7px 0; }
+  .card .ctrls { display: grid; gap: 6px; }
+  .card select { width: 100%; padding: 8px; border: 1.5px solid #EBD7B4; border-radius: 10px; background: #fff; }
+  .card .rule { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--mute); margin: 7px 0; }
+  .card .rule input { width: 17px; height: 17px; accent-color: var(--orange); }
+  .card .btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  .card .btns .btn { flex: 1; min-width: 60px; padding: 7px 6px; }
+  /* تنبيه المحل */
+  .col .alert { margin-top: 8px; background: linear-gradient(135deg, #FDECEC, #FBDADA); border: 1.5px solid #F2B3B3; color: #B71C1C; border-radius: 10px; padding: 6px 8px; font-size: 12px; font-weight: 800; line-height: 1.6; display: flex; gap: 6px; align-items: flex-start; }
+  .col .alert span { flex: 1; }
+  .col .alert button { border: 0; background: transparent; color: #B71C1C; font-weight: 900; cursor: pointer; padding: 0 2px; font-size: 14px; line-height: 1; }
+  .col.has-alert { border-top-color: #E0393E; }
 
   /* ===== نوافذ ===== */
   .modal-bg { position: fixed; inset: 0; z-index: 90; background: rgba(11,30,55,.45); display: flex; align-items: flex-end; justify-content: center; }
@@ -274,7 +296,7 @@ const PALETTE = [['#FF9F1C','#E67E00'],['#1E90FF','#0F5FA8'],['#2BB45A','#1A8A3E
 const OP_CLASS = { 'إيراد': 'op-in', 'مصروف': 'op-out', 'تحويل': 'op-tr' };
 
 const $ = id => document.getElementById(id);
-const st = { state: null, items: {}, busy: false, screen: 'q', q: '' };
+const st = { state: null, items: {}, busy: false, screen: 'q', q: '', openCards: new Set(), errs: {} };
 const SCREENS = { q: { t: '❓ الاستفسارات', z: 'مفيش استفسارات' }, p: { t: '⏳ مستني تأكيد', z: 'مفيش حركات مستنية' }, d: { t: '✅ اتعمل النهارده', z: 'لسه مفيش' } };
 
 // ---------- أدوات ----------
@@ -366,6 +388,7 @@ function afterLogin(r) {
   $('who').textContent = r.name || '';
   if (r.sheetUrl) { $('sheetBtn').href = r.sheetUrl; $('sheetBtn').classList.remove('hidden'); }
   if (SCREENS[ls('tsw_screen')]) st.screen = ls('tsw_screen');
+  try { st.errs = JSON.parse(ls('tsw_errs') || '{}') || {}; } catch (e) { st.errs = {}; }
   showInstall(); hh();
   load();
 }
@@ -404,6 +427,19 @@ function shopsData() {
   (s.recent || []).forEach(m => { if (String(m.doneAt || '').slice(0, 10) === t) get(m.branch).d.push(m); });
   return Object.values(map);
 }
+function setErr(br, msg) {
+  if (msg) st.errs[br] = { msg: msg, at: new Date().toTimeString().slice(0, 5) }; else delete st.errs[br];
+  ls('tsw_errs', JSON.stringify(st.errs));
+}
+function shortNote(n) { return String(n || '').split(/\s*[,،]\s*تم الت[اأ]ك[ي]?د/)[0].trim() || '—'; }
+const CHEV = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+function sumRow(m, lead, tail) {
+  const out = m.vtype ? /صرف/.test(m.vtype) : (m.op === 'إيراد' || m.op === 'تحويل');
+  return '<div class="sum" data-card="' + esc(m.id) + '">' + (lead || '') +
+    '<span class="dir ' + (out ? 'out' : 'in') + '" title="' + esc(m.vtype) + '">' + (out ? '↑' : '↓') + '</span>' +
+    '<span class="tx"><span class="a num">' + money(m.amount) + '</span><span class="n" title="' + esc(m.note) + '">' + esc(shortNote(m.note)) + '</span></span>' +
+    (tail || '') + CHEV + '</div>';
+}
 function balClass(v) { if (v === '' || v == null) return 'na'; return Number(v) === 0 ? 'zero' : 'nz'; }
 
 // ---------- الرسم: 3 شاشات، وفي كل شاشة عمود لكل محل ----------
@@ -433,11 +469,14 @@ function column(x, k) {
   const n = x[k].length;
   const chip = (cls, e, c, l) => '<span class="chip ' + cls + (c ? '' : ' z') + '">' + e + ' <span class="num">' + c + '</span> ' + l + '</span>';
   const bal = b.balance === '' || b.balance == null ? '—' : money(b.balance);
-  let h = '<div class="col" style="--c1:' + col[0] + ';--c2:' + col[1] + '"><div class="hd">' +
+  const er = st.errs[name];
+  let h = '<div class="col' + (er ? ' has-alert' : '') + '" style="--c1:' + col[0] + ';--c2:' + col[1] + '"><div class="hd">' +
     '<div class="r1"><b title="' + esc(name) + '">' + esc(name) + '</b><span class="cnt num' + (n ? '' : ' z') + '">' + n + '</span></div>' +
     '<div class="chips">' + chip('ch-q', '❓', x.q.length, 'استفسار') + chip('ch-p', '⏳', x.p.length, 'تأكيد') + chip('ch-d', '✅', x.d.length, 'النهارده') + '</div>' +
     '<div class="r3"><span class="bal num ' + balClass(b.balance) + '" title="رصيد خزنة الدعم">' + bal + '</span><span class="sp"></span>' +
-    '<button class="mini" data-scan="' + esc(name) + '" title="آخر فحص: ' + esc(b.scanned || 'لسه') + '">🔄 فحص</button></div></div>';
+    '<button class="mini" data-scan="' + esc(name) + '" title="آخر فحص: ' + esc(b.scanned || 'لسه') + '">🔄 فحص</button></div>' +
+    (er ? '<div class="alert">⚠️<span>' + esc(er.msg) + ' <small class="num">(' + esc(er.at) + ')</small></span><button data-clr="' + esc(name) + '" title="إخفاء">×</button></div>' : '') +
+    '</div>';
   h += '<div class="bd">';
   if (!n) h += '<div class="zero-note"><b class="num">0</b>' + SCREENS[k].z + '</div>';
   else if (k === 'q') h += x.q.map(qCard).join('');
@@ -449,23 +488,17 @@ function column(x, k) {
   return h + '</div>';
 }
 
-function dCard(m) {
-  const ok = m.status === 'تم';
-  return '<div class="dn' + (ok ? '' : ' rej') + '"><div class="top"><b>' + esc(m.msg || m.item || m.note) + '</b><span class="tag">' + (ok ? '✓ تم' : esc(m.status || 'مرفوض')) + '</span></div>' +
-    '<small>«' + esc(m.note) + '»</small>' +
-    '<small><span class="num">' + money(m.amount) + '</span> — <span class="num">' + esc(String(m.doneAt || '').slice(11, 16)) + '</span> — ' + esc(m.by) + '</small></div>';
-}
-
 function opPill(op) { return '<span class="pill ' + (OP_CLASS[op] || 'op-tr') + '">' + esc(op || '؟') + '</span>'; }
+function isOpen(m) { return st.openCards.has(m.id); }
 function pCard(m) {
   const running = m.status === 'جاري التنفيذ';
   const warn = /^⚠/.test(m.msg || '');
   const what = m.op === 'تحويل' ? opPill('تحويل') + ' من «' + esc(m.item) + '»' : opPill(m.op) + ' «' + esc(m.item) + '»';
-  return '<div class="mv' + (warn ? ' warn' : '') + '">' +
-    (running ? '<span class="pill op-tr">جاري</span>' : '<input type="checkbox" class="pick" data-branch="' + esc(m.branch) + '" value="' + esc(m.id) + '" checked>') +
-    '<div class="body"><div class="top"><b>' + esc(m.vtype) + '</b><span class="amt num">' + money(m.amount) + '</span></div>' +
-    '<div class="meta">الملاحظة: «' + esc(m.note) + '» — <span class="num">' + esc(m.stime) + '</span></div>' +
-    '<div class="will">هيتسجّل: ' + what + '</div>' +
+  const lead = running ? '<span class="pill op-tr">جاري</span>' : '<input type="checkbox" class="pick" data-branch="' + esc(m.branch) + '" value="' + esc(m.id) + '" checked>';
+  return '<div class="card cp' + (warn ? ' warn' : '') + (isOpen(m) ? ' open' : '') + '">' + sumRow(m, lead) +
+    '<div class="will">' + what + '</div>' +
+    (warn ? '<div class="wshort">⚠️ رصيد خزنة التحصيل مش مكفّي</div>' : '') +
+    '<div class="more"><div class="meta">' + esc(m.vtype) + ' — ' + esc(m.bayan) + '<br>الملاحظة: «' + esc(m.note) + '»<br><span class="num">' + esc(m.stime) + '</span></div>' +
     (warn ? '<div class="wmsg">' + esc(m.msg) + '</div>' : '') +
     (running ? '' : '<div style="margin-top:8px"><button class="btn bad sm" data-reject="' + esc(m.id) + '">رفض</button></div>') +
     '</div></div>';
@@ -473,25 +506,40 @@ function pCard(m) {
 function qCard(m) {
   const isErr = m.status === 'خطأ';
   const ops = ['إيراد', 'مصروف', 'تحويل'];
-  return '<div class="q" data-id="' + esc(m.id) + '" data-branch="' + esc(m.branch) + '" data-want="' + esc(m.item) + '">' +
-    '<div class="top"><b>' + esc(m.vtype) + '</b><span class="amt num">' + money(m.amount) + '</span></div>' +
-    '<div class="meta">' + esc(m.bayan) + '<br>الملاحظة: «' + esc(m.note) + '» — <span class="num">' + esc(m.stime) + '</span></div>' +
-    '<div class="msg">' + (isErr ? 'حصل خطأ: ' : '') + esc(m.msg) + '</div>' +
-    '<div class="ctrls"><select class="q-op">' + ops.map(o => '<option value="' + o + '"' + (m.op === o ? ' selected' : '') + '>' + o + '</option>').join('') + '</select>' +
-    '<select class="q-item"><option value="">جاري تحميل البنود...</option></select></div>' +
+  // إيصال صرف ملاحظته فيها «تحصيل» (اتفحص قبل قاعدة التحويل): نختار التحويل من خزنة التحصيل جاهز
+  const collect = /صرف/.test(m.vtype || '') && /تحصيل/.test(norm(m.note));
+  const op = collect && m.op !== 'تحويل' ? 'تحويل' : m.op;
+  const want = collect && m.op !== 'تحويل' ? 'تحصيل خاص بالمخزن' : m.item;
+  return '<div class="card cq q' + (isOpen(m) ? ' open' : '') + '" data-id="' + esc(m.id) + '" data-branch="' + esc(m.branch) + '" data-want="' + esc(want) + '">' + sumRow(m) +
+    '<div class="more"><div class="meta">' + esc(m.vtype) + ' — ' + esc(m.bayan) + '<br>الملاحظة: «' + esc(m.note) + '»<br><span class="num">' + esc(m.stime) + '</span></div>' +
+    '<div class="q-msg">' + (isErr ? 'حصل خطأ: ' : '') + esc(m.msg) + (collect && m.op !== 'تحويل' ? '<br>👈 ده تحصيل: اخترتلك «تحويل» من «تحصيل خاص بالمخزن» — راجع ودوس اعتمد' : '') + '</div>' +
+    '<div class="ctrls"><select class="q-op">' + ops.map(o => '<option value="' + o + '"' + (op === o ? ' selected' : '') + '>' + o + '</option>').join('') + '</select>' +
+    '<select class="q-item"><option value="">دوس «تحديث البنود» لو القايمة فاضية</option></select></div>' +
     '<label class="rule"><input type="checkbox" class="q-rule"> احفظها قاعدة للكلمة دي</label>' +
     '<div class="btns"><button class="btn green sm q-yes">اعتمد</button><button class="btn ghost sm q-reload">تحديث البنود</button>' +
-    '<button class="btn bad sm q-no">تجاهل</button></div></div>';
+    '<button class="btn bad sm q-no">تجاهل</button></div></div></div>';
+}
+function dCard(m) {
+  const ok = m.status === 'تم';
+  return '<div class="card cd' + (ok ? '' : ' rej') + (isOpen(m) ? ' open' : '') + '">' + sumRow(m, '', '<span class="tag">' + (ok ? '✓ تم' : esc(m.status || 'مرفوض')) + '</span>') +
+    '<div class="more"><div class="meta">' + esc(m.msg || '') + '<br>الملاحظة: «' + esc(m.note) + '»<br><span class="num">' + esc(String(m.doneAt || '').slice(11, 16)) + '</span> — ' + esc(m.by) + '</div></div></div>';
 }
 
 function wire() {
   document.querySelectorAll('[data-scan]').forEach(b => b.onclick = () => scanList([b.dataset.scan]));
   document.querySelectorAll('[data-confirm]').forEach(b => b.onclick = () => confirmBranch(b.dataset.confirm, b));
   document.querySelectorAll('[data-reject]').forEach(b => b.onclick = () => reject(b.dataset.reject));
+  document.querySelectorAll('[data-card]').forEach(h => h.onclick = e => {
+    if (e.target.closest('input,button,select')) return;
+    const id = h.dataset.card, card = h.parentElement;
+    if (st.openCards.has(id)) { st.openCards.delete(id); card.classList.remove('open'); }
+    else { st.openCards.add(id); card.classList.add('open'); if (card.classList.contains('q')) loadItems(card.dataset.branch, false); }
+  });
+  document.querySelectorAll('[data-clr]').forEach(b => b.onclick = () => { setErr(b.dataset.clr, null); render(); });
   const cards = Array.from(document.querySelectorAll('.q'));
   const brs = {};
   cards.forEach(c => {
-    brs[c.dataset.branch] = true;
+    if (c.classList.contains('open')) brs[c.dataset.branch] = true;
     c.querySelector('.q-op').onchange = () => fillItems(c);
     c.querySelector('.q-yes').onclick = () => answer(c);
     c.querySelector('.q-no').onclick = () => reject(c.dataset.id);
@@ -505,14 +553,18 @@ $('q').addEventListener('input', () => { st.q = $('q').value; render(); });
 async function loadItems(br, force) {
   const cards = () => Array.from(document.querySelectorAll('.q')).filter(c => c.dataset.branch === br);
   if (st.items[br] && !force) { cards().forEach(fillItems); return; }
-  if (force) cards().forEach(c => c.querySelector('.q-item').innerHTML = '<option value="">جاري تحديث البنود...</option>');
+  if (st.errs[br] && !force) return; // المحل فيه مشكلة دخول: نستنى «تحديث البنود» بدل ما نكرر الطلب
+  if (st._loadingItems && st._loadingItems[br] && !force) return;
+  st._loadingItems = st._loadingItems || {}; st._loadingItems[br] = true;
+  cards().forEach(c => c.querySelector('.q-item').innerHTML = '<option value="">جاري تحميل البنود...</option>');
   try {
     st.items[br] = await api('items', { branch: br, force: !!force });
+    if (st.errs[br]) { setErr(br, null); render(); return; }
     cards().forEach(fillItems);
   } catch (e) {
     cards().forEach(c => c.querySelector('.q-item').innerHTML = '<option value="">مقدرتش أحمّل البنود</option>');
-    toast(br + ': ' + arErr(e), 'bad');
-  }
+    setErr(br, arErr(e)); render();
+  } finally { st._loadingItems[br] = false; }
 }
 function fillItems(c) {
   const op = c.querySelector('.q-op').value;
@@ -534,11 +586,12 @@ async function scanList(names) {
     try {
       const r = await api('scan', { branch: names[i] });
       added += r.added; qs += r.questions;
-    } catch (e) { errs.push(names[i]); if (names.length === 1) toast(names[i] + ': ' + arErr(e), 'bad'); }
+      setErr(names[i], null);
+    } catch (e) { errs.push(names[i]); setErr(names[i], 'الفحص: ' + arErr(e)); }
   }
   strip(null); st.busy = false; $('btnScanAll').disabled = false;
   await load(true);
-  const msg = 'خلص الفحص: ' + added + ' حركة جديدة' + (qs ? ' — منهم ' + qs + ' استفسار' : '') + (errs.length ? ' — فروع فيها مشكلة: ' + errs.join('، ') : '');
+  const msg = 'خلص الفحص: ' + added + ' حركة جديدة' + (qs ? ' — منهم ' + qs + ' استفسار' : '') + (errs.length ? ' — ' + errs.length + ' فرع فيه مشكلة (مكتوبة في عموده)' : '');
   toast(msg, errs.length ? 'bad' : 'ok');
 }
 $('btnScanAll').onclick = () => scanList((st.state ? st.state.branches : []).map(b => b.name));
@@ -553,7 +606,8 @@ async function confirmBranch(br, btn) {
     const r = await api('confirm', { branch: br, ids: ids });
     const msg = br + ': اتسجّل ' + r.done + (r.failed ? ' — ما اتسجّلش ' + r.failed : '') + ' — رصيد خزنة الدعم قبل ' + money(r.before) + ' وبعد ' + money(r.after);
     toast(msg, (r.failed > 0 || Number(r.after) !== 0) ? 'bad' : 'ok');
-  } catch (e) { toast(arErr(e), 'bad'); }
+    setErr(br, null);
+  } catch (e) { setErr(br, 'التسجيل: ' + arErr(e)); toast(br + ': ' + arErr(e), 'bad'); }
   st.busy = false; strip(null);
   await load(true);
 }

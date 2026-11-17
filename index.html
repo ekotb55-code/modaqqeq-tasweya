@@ -503,11 +503,14 @@ function hbarPos() {
   const first = Math.min(total, Math.round(x / w) + 1), last = Math.min(total, first + Math.max(1, Math.floor(b.clientWidth / w)) - 1);
   $('hPos').textContent = first + '–' + last + ' من ' + total;
 }
-// مزامنة اللوحة مع الشريط: اللي بيتحرك الأول هو اللي بيقود لحد ما يقف
-let scrLock = null, scrT = 0;
-function lockScroll(who) { scrLock = who; clearTimeout(scrT); scrT = setTimeout(() => { scrLock = null; }, 150); }
-$('board').addEventListener('scroll', () => { if (scrLock === 'hs') return; lockScroll('board'); $('hscroll').scrollLeft = $('board').scrollLeft; hbarPos(); }, { passive: true });
-$('hscroll').addEventListener('scroll', () => { if (scrLock === 'board') return; lockScroll('hs'); $('board').scrollLeft = $('hscroll').scrollLeft; hbarPos(); }, { passive: true });
+// مزامنة اللوحة مع الشريط: الشريط بيحرك اللوحة بس لما إنت اللي ماسكه
+let hsUser = false, hsT = 0;
+const hsOn = () => { hsUser = true; clearTimeout(hsT); };
+const hsOff = () => { clearTimeout(hsT); hsT = setTimeout(() => { hsUser = false; }, 250); };
+$('hscroll').addEventListener('pointerdown', hsOn);
+window.addEventListener('pointerup', hsOff);
+$('board').addEventListener('scroll', () => { if (!hsUser) $('hscroll').scrollLeft = $('board').scrollLeft; hbarPos(); }, { passive: true });
+$('hscroll').addEventListener('scroll', () => { if (hsUser) $('board').scrollLeft = $('hscroll').scrollLeft; }, { passive: true });
 // RTL: الشمال = المحلات اللي بعد
 $('hL').onclick = () => $('board').scrollBy({ left: -colStep(), behavior: 'smooth' });
 $('hR').onclick = () => $('board').scrollBy({ left: colStep(), behavior: 'smooth' });
@@ -517,7 +520,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowRight') { e.preventDefault(); $('hR').click(); }
 });
 // عجلة الماوس فوق الشريط تحرك يمين وشمال
-$('hbar').addEventListener('wheel', e => { if (!e.deltaX) { e.preventDefault(); $('board').scrollBy({ left: -e.deltaY }); } }, { passive: false });
+$('hbar').addEventListener('wheel', e => { e.preventDefault(); $('board').scrollBy({ left: e.deltaX || -e.deltaY }); }, { passive: false });
 
 function column(x, k) {
   const b = x.b, name = b.name;

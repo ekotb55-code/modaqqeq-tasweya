@@ -188,9 +188,8 @@
   .card .chev { width: 18px; height: 18px; color: #A0ABB8; flex: none; transition: transform .2s; }
   .card.open .chev { transform: rotate(180deg); }
   .card .more { display: none; padding: 0 9px 9px; border-top: 1px dashed #E6ECF3; }
-  .card.open .more, .card.hov .more { display: block; }
-  .card.hov .chev { transform: rotate(180deg); }
-  .card.hov { box-shadow: 0 4px 14px rgba(16,40,80,.12); }
+  .card.open .more { display: block; }
+  .scr-title .mini { margin-inline-start: auto; }
   .card .will { margin: 0; padding: 0 9px 8px 9px; font-size: 12.5px; }
   .card .wshort { margin: 0 9px 8px; font-size: 11.5px; font-weight: 800; color: #C62828; background: #FDECEC; border-radius: 8px; padding: 3px 8px; }
   .card input.pick { width: 21px; height: 21px; flex: none; accent-color: var(--green); margin: 0; }
@@ -317,7 +316,7 @@ const PALETTE = [['#FF9F1C','#E67E00'],['#1E90FF','#0F5FA8'],['#2BB45A','#1A8A3E
 const OP_CLASS = { 'إيراد': 'op-in', 'مصروف': 'op-out', 'تحويل': 'op-tr' };
 
 const $ = id => document.getElementById(id);
-const st = { state: null, items: {}, busy: false, screen: 'q', q: '', openCards: new Set(), errs: {} };
+const st = { state: null, items: {}, busy: false, screen: 'q', q: '', closedCards: new Set(), errs: {} };
 const SCREENS = { q: { t: '❓ الاستفسارات', z: 'مفيش استفسارات' }, p: { t: '⏳ مستني تأكيد', z: 'مفيش حركات مستنية' }, d: { t: '✅ اتعمل النهارده', z: 'لسه مفيش' } };
 
 // ---------- أدوات ----------
@@ -410,6 +409,7 @@ function afterLogin(r) {
   if (r.sheetUrl) { $('sheetBtn').href = r.sheetUrl; $('sheetBtn').classList.remove('hidden'); }
   if (SCREENS[ls('tsw_screen')]) st.screen = ls('tsw_screen');
   try { st.errs = JSON.parse(ls('tsw_errs') || '{}') || {}; } catch (e) { st.errs = {}; }
+  try { st.closedCards = new Set(JSON.parse(ls('tsw_closed') || '[]')); } catch (e) { st.closedCards = new Set(); }
   showInstall(); hh();
   load();
 }
@@ -477,7 +477,11 @@ function render() {
   list.sort((a, b) => (b[k].length - a[k].length) || (b.q.length + b.p.length - a.q.length - a.p.length) ||
     ((balClass(b.b.balance) === 'nz') - (balClass(a.b.balance) === 'nz')) || a.b.name.localeCompare(b.b.name, 'ar'));
   const busy = list.filter(x => x[k].length).length;
-  $('scrTitle').innerHTML = SCREENS[k].t + ' <small>— ' + busy + ' محل فيه حاجة من ' + list.length + '</small>';
+  const ids = []; list.forEach(x => x[k].forEach(m => ids.push(m.id)));
+  const anyOpen = ids.some(id => !st.closedCards.has(id));
+  $('scrTitle').innerHTML = SCREENS[k].t + ' <small>— ' + busy + ' محل فيه حاجة من ' + list.length + '</small>' +
+    (ids.length ? '<button class="mini" id="togAll">' + (anyOpen ? '⇕ قفل الكل' : '⇕ فتح الكل') + '</button>' : '');
+  if (ids.length) $('togAll').onclick = () => { ids.forEach(id => anyOpen ? st.closedCards.add(id) : st.closedCards.delete(id)); saveClosed(); render(); };
 
   $('board').innerHTML = list.length ? list.map(x => column(x, k)).join('') :
     '<div class="empty">مفيش محلات ' + (st.q ? 'بالاسم ده' : '— فعّل الفروع من تاب «الفروع» في الشيت') + '</div>';
@@ -486,7 +490,6 @@ function render() {
 }
 
 // ---------- التحكم يمين وشمال ----------
-const canHover = matchMedia('(hover: hover) and (pointer: fine)').matches;
 function colStep() { const c = document.querySelector('.col'); return c ? (c.offsetWidth + 12) * Math.max(1, Math.floor($('board').clientWidth / (c.offsetWidth + 12)) - 1) : 300; }
 function hbarSync() {
   const b = $('board'), over = b.scrollWidth > b.clientWidth + 4;
@@ -553,7 +556,9 @@ function column(x, k) {
 }
 
 function opPill(op) { return '<span class="pill ' + (OP_CLASS[op] || 'op-tr') + '">' + esc(op || '؟') + '</span>'; }
-function isOpen(m) { return st.openCards.has(m.id); }
+// الكروت مفتوحة على طول، والتطبيق بيفتكر اللي إنت قفلته
+function isOpen(m) { return !st.closedCards.has(m.id); }
+function saveClosed() { ls('tsw_closed', JSON.stringify([...st.closedCards].slice(-800))); }
 function pCard(m) {
   const running = m.status === 'جاري التنفيذ';
   const warn = /^⚠/.test(m.msg || '');
@@ -596,18 +601,10 @@ function wire() {
   document.querySelectorAll('[data-card]').forEach(h => h.onclick = e => {
     if (e.target.closest('input,button,select')) return;
     const id = h.dataset.card, card = h.parentElement;
-    if (st.openCards.has(id)) { st.openCards.delete(id); card.classList.remove('open'); }
-    else { st.openCards.add(id); card.classList.add('open'); if (card.classList.contains('q')) loadItems(card.dataset.branch, false); }
-  });
-  if (canHover) document.querySelectorAll('.card').forEach(card => {
-    card.addEventListener('mouseenter', () => {
-      clearTimeout(card._t);
-      card.classList.add('hov');
-      if (card.classList.contains('q')) loadItems(card.dataset.branch, false);
-    });
-    const close = () => { card._t = setTimeout(() => { if (!card.matches(':hover') && !card.contains(document.activeElement)) card.classList.remove('hov'); }, 250); };
-    card.addEventListener('mouseleave', close);
-    card.addEventListener('focusout', close);
+    if (!st.closedCards.has(id)) { st.closedCards.add(id); card.classList.remove('open'); }
+    else { st.closedCards.delete(id); card.classList.add('open'); if (card.classList.contains('q')) loadItems(card.dataset.branch, false); }
+    saveClosed();
+    const t = $('togAll'); if (t) t.textContent = document.querySelector('.card.open') ? '⇕ قفل الكل' : '⇕ فتح الكل';
   });
   document.querySelectorAll('[data-clr]').forEach(b => b.onclick = () => { setErr(b.dataset.clr, null); render(); });
   const cards = Array.from(document.querySelectorAll('.q'));

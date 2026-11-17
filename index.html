@@ -112,10 +112,23 @@
   .flt a { color: var(--blue); cursor: pointer; font-weight: 700; }
 
   /* ===== لوحة المحلات (عمود لكل محل) ===== */
-  #board { display: flex; gap: 12px; align-items: flex-start; overflow-x: auto; padding: 4px 2px 14px; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
-  #board::-webkit-scrollbar { height: 10px; }
-  #board::-webkit-scrollbar-thumb { background: #C5D3E4; border-radius: 99px; }
-  .col { flex: 0 0 262px; scroll-snap-align: start; background: #fff; border-radius: 16px; border: 1px solid #E6EDF6; border-top: 5px solid var(--c1); box-shadow: 0 3px 12px rgba(16,40,80,.07); overflow: hidden; }
+  #board { display: flex; gap: 12px; align-items: flex-start; overflow-x: auto; padding: 4px 2px 14px; -webkit-overflow-scrolling: touch; }
+  #board { scrollbar-width: none; }
+  #board::-webkit-scrollbar { display: none; }
+  /* شريط التحكم يمين وشمال (ثابت تحت الشاشة) */
+  #hbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: flex; align-items: center; gap: 8px; padding: 6px 10px calc(env(safe-area-inset-bottom) + 6px);
+    background: rgba(255,255,255,.94); backdrop-filter: blur(6px); border-top: 1px solid #E1E8F1; box-shadow: 0 -4px 14px rgba(16,40,80,.08); }
+  #hbar button { width: 36px; height: 30px; border-radius: 10px; border: 0; color: #fff; font-size: 15px; font-weight: 900; cursor: pointer; flex: none;
+    background: linear-gradient(135deg, var(--blue), var(--purple)); box-shadow: 0 3px 8px rgba(20,121,211,.25); }
+  #hbar button:disabled { opacity: .35; box-shadow: none; }
+  #hscroll { flex: 1; overflow-x: auto; overflow-y: hidden; height: 16px; direction: rtl; }
+  #hscroll div { height: 1px; }
+  #hscroll::-webkit-scrollbar { height: 12px; }
+  #hscroll::-webkit-scrollbar-track { background: #EEF3F9; border-radius: 99px; }
+  #hscroll::-webkit-scrollbar-thumb { background: linear-gradient(90deg, #6FA8E6, #8B6CF0); border-radius: 99px; }
+  #hbar .pos { font-size: 11.5px; color: var(--mute); font-weight: 700; white-space: nowrap; flex: none; }
+  main { padding-bottom: calc(env(safe-area-inset-bottom) + 64px) !important; }
+  .col { flex: 0 0 262px; background: #fff; border-radius: 16px; border: 1px solid #E6EDF6; border-top: 5px solid var(--c1); box-shadow: 0 3px 12px rgba(16,40,80,.07); overflow: hidden; }
   @media (max-width: 560px) { .col { flex-basis: 78vw; } }
   .col .hd { padding: 10px 11px 9px; background: linear-gradient(180deg, color-mix(in srgb, var(--c1) 13%, #fff), #fff); border-bottom: 1px solid #EEF2F8; }
   .col .r1 { display: flex; align-items: center; gap: 7px; }
@@ -175,7 +188,9 @@
   .card .chev { width: 18px; height: 18px; color: #A0ABB8; flex: none; transition: transform .2s; }
   .card.open .chev { transform: rotate(180deg); }
   .card .more { display: none; padding: 0 9px 9px; border-top: 1px dashed #E6ECF3; }
-  .card.open .more { display: block; }
+  .card.open .more, .card.hov .more { display: block; }
+  .card.hov .chev { transform: rotate(180deg); }
+  .card.hov { box-shadow: 0 4px 14px rgba(16,40,80,.12); }
   .card .will { margin: 0; padding: 0 9px 8px 9px; font-size: 12.5px; }
   .card .wshort { margin: 0 9px 8px; font-size: 11.5px; font-weight: 800; color: #C62828; background: #FDECEC; border-radius: 8px; padding: 3px 8px; }
   .card input.pick { width: 21px; height: 21px; flex: none; accent-color: var(--green); margin: 0; }
@@ -286,6 +301,12 @@
     <div class="scr-title" id="scrTitle"></div>
     <div id="board"></div>
   </main>
+  <div id="hbar" class="hidden">
+    <button id="hR" title="المحلات اللي قبل">▶</button>
+    <div id="hscroll"><div id="hsIn"></div></div>
+    <button id="hL" title="المحلات اللي بعد">◀</button>
+    <span class="pos num" id="hPos"></span>
+  </div>
 </section>
 
 <div id="toast" class="hidden"></div>
@@ -379,7 +400,7 @@ $('loginForm').addEventListener('submit', async e => {
   }
 });
 function showLogin() {
-  $('main').classList.add('hidden'); $('login').classList.remove('hidden');
+  $('main').classList.add('hidden'); $('login').classList.remove('hidden'); $('hbar').classList.add('hidden');
   $('lName').value = ls('tsw_name') || '';
   showInstall();
 }
@@ -461,7 +482,42 @@ function render() {
   $('board').innerHTML = list.length ? list.map(x => column(x, k)).join('') :
     '<div class="empty">مفيش محلات ' + (st.q ? 'بالاسم ده' : '— فعّل الفروع من تاب «الفروع» في الشيت') + '</div>';
   wire();
+  hbarSync();
 }
+
+// ---------- التحكم يمين وشمال ----------
+const canHover = matchMedia('(hover: hover) and (pointer: fine)').matches;
+function colStep() { const c = document.querySelector('.col'); return c ? (c.offsetWidth + 12) * Math.max(1, Math.floor($('board').clientWidth / (c.offsetWidth + 12)) - 1) : 300; }
+function hbarSync() {
+  const b = $('board'), over = b.scrollWidth > b.clientWidth + 4;
+  $('hbar').classList.toggle('hidden', !over || $('main').classList.contains('hidden'));
+  if (!over) return;
+  $('hsIn').style.width = b.scrollWidth + 'px';
+  if (Math.abs($('hscroll').scrollLeft - b.scrollLeft) > 1) $('hscroll').scrollLeft = b.scrollLeft;
+  hbarPos();
+}
+function hbarPos() {
+  const b = $('board'), max = b.scrollWidth - b.clientWidth, x = Math.abs(b.scrollLeft);
+  $('hR').disabled = x < 4; $('hL').disabled = x > max - 4;
+  const c = document.querySelector('.col'), w = c ? c.offsetWidth + 12 : 1, total = document.querySelectorAll('.col').length;
+  const first = Math.min(total, Math.round(x / w) + 1), last = Math.min(total, first + Math.max(1, Math.floor(b.clientWidth / w)) - 1);
+  $('hPos').textContent = first + '–' + last + ' من ' + total;
+}
+// مزامنة اللوحة مع الشريط: اللي بيتحرك الأول هو اللي بيقود لحد ما يقف
+let scrLock = null, scrT = 0;
+function lockScroll(who) { scrLock = who; clearTimeout(scrT); scrT = setTimeout(() => { scrLock = null; }, 150); }
+$('board').addEventListener('scroll', () => { if (scrLock === 'hs') return; lockScroll('board'); $('hscroll').scrollLeft = $('board').scrollLeft; hbarPos(); }, { passive: true });
+$('hscroll').addEventListener('scroll', () => { if (scrLock === 'board') return; lockScroll('hs'); $('board').scrollLeft = $('hscroll').scrollLeft; hbarPos(); }, { passive: true });
+// RTL: الشمال = المحلات اللي بعد
+$('hL').onclick = () => $('board').scrollBy({ left: -colStep(), behavior: 'smooth' });
+$('hR').onclick = () => $('board').scrollBy({ left: colStep(), behavior: 'smooth' });
+document.addEventListener('keydown', e => {
+  if ($('main').classList.contains('hidden') || e.target.closest('input,select,textarea') || document.querySelector('.modal-bg')) return;
+  if (e.key === 'ArrowLeft') { e.preventDefault(); $('hL').click(); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); $('hR').click(); }
+});
+// عجلة الماوس فوق الشريط تحرك يمين وشمال
+$('hbar').addEventListener('wheel', e => { if (!e.deltaX) { e.preventDefault(); $('board').scrollBy({ left: -e.deltaY }); } }, { passive: false });
 
 function column(x, k) {
   const b = x.b, name = b.name;
@@ -534,6 +590,16 @@ function wire() {
     const id = h.dataset.card, card = h.parentElement;
     if (st.openCards.has(id)) { st.openCards.delete(id); card.classList.remove('open'); }
     else { st.openCards.add(id); card.classList.add('open'); if (card.classList.contains('q')) loadItems(card.dataset.branch, false); }
+  });
+  if (canHover) document.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('mouseenter', () => {
+      clearTimeout(card._t);
+      card.classList.add('hov');
+      if (card.classList.contains('q')) loadItems(card.dataset.branch, false);
+    });
+    const close = () => { card._t = setTimeout(() => { if (!card.matches(':hover') && !card.contains(document.activeElement)) card.classList.remove('hov'); }, 250); };
+    card.addEventListener('mouseleave', close);
+    card.addEventListener('focusout', close);
   });
   document.querySelectorAll('[data-clr]').forEach(b => b.onclick = () => { setErr(b.dataset.clr, null); render(); });
   const cards = Array.from(document.querySelectorAll('.q'));
@@ -663,7 +729,7 @@ $('installBtn2').onclick = doInstall;
 
 // ---------- البداية ----------
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
-window.addEventListener('resize', hh);
+window.addEventListener('resize', () => { hh(); hbarSync(); });
 (function start() {
   const u = ls('tsw_user');
   if (u && ls('tsw_pass')) {

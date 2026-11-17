@@ -512,8 +512,13 @@ window.addEventListener('pointerup', hsOff);
 $('board').addEventListener('scroll', () => { if (!hsUser) $('hscroll').scrollLeft = $('board').scrollLeft; hbarPos(); }, { passive: true });
 $('hscroll').addEventListener('scroll', () => { if (hsUser) $('board').scrollLeft = $('hscroll').scrollLeft; }, { passive: true });
 // RTL: الشمال = المحلات اللي بعد
-$('hL').onclick = () => $('board').scrollBy({ left: -colStep(), behavior: 'smooth' });
-$('hR').onclick = () => $('board').scrollBy({ left: colStep(), behavior: 'smooth' });
+function hMove(dx) {
+  const b = $('board'), from = b.scrollLeft;
+  b.scrollBy({ left: dx, behavior: 'smooth' });
+  setTimeout(() => { if (Math.abs(b.scrollLeft - from) < 2) b.scrollLeft = from + dx; }, 350); // لو الحركة الناعمة ما اشتغلتش
+}
+$('hL').onclick = () => hMove(-colStep());
+$('hR').onclick = () => hMove(colStep());
 document.addEventListener('keydown', e => {
   if ($('main').classList.contains('hidden') || e.target.closest('input,select,textarea') || document.querySelector('.modal-bg')) return;
   if (e.key === 'ArrowLeft') { e.preventDefault(); $('hL').click(); }

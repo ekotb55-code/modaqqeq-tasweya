@@ -662,7 +662,7 @@ function fillItems(c) {
   const isSup = SUP_OPS.includes(op);
   const ph = op === 'تحويل' ? '— اختار الخزنة اللي هيتحوّل منها —' : isSup ? '— اختار المورد —' : '— اختار البند —';
   // المورد: «ابو سمرة» متختار جاهز لو مفيش اختيار تاني
-  let pick = list.find(t => t === want) || (isSup ? list.find(t => norm(t) === norm(DEFAULT_SUPPLIER)) : null) || '';
+  let pick = list.find(t => t === want) || (isSup ? list.find(t => norm(t).replace(/\s/g, '') === norm(DEFAULT_SUPPLIER).replace(/\s/g, '')) : null) || '';
   c.querySelector('.q-item').innerHTML = '<option value="">' + ph + '</option>' +
     list.map(t => '<option' + (t === pick ? ' selected' : '') + '>' + esc(t) + '</option>').join('');
 }

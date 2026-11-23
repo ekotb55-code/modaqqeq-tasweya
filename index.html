@@ -174,6 +174,10 @@
   .op-in { background: linear-gradient(135deg, #2BB45A, #1A8A3E); }
   .op-out { background: linear-gradient(135deg, #F0504F, #C62828); }
   .op-tr { background: linear-gradient(135deg, #8B6CF0, #5B3CC4); }
+  .op-sup { background: linear-gradient(135deg, #26A69A, #00796B); }
+  .card .kw { width: 100%; padding: 8px; border: 1.5px solid #EBD7B4; border-radius: 10px; background: #fff; margin: -2px 0 8px; font-family: inherit; }
+  .card.cd.cxl { border-color: #C3DDF8; background: linear-gradient(90deg, #fff, #F2F8FF); }
+  .card.cxl .tag { background: #E4F0FD; color: #0F5FA8; }
   .wmsg { margin-top: 6px; font-size: 12.5px; font-weight: 800; color: #C62828; background: #FDECEC; border-radius: 10px; padding: 5px 9px; }
 
   /* ===== الكروت المختصرة ===== */
@@ -313,7 +317,18 @@
 <script>
 const API = 'https://script.google.com/macros/s/AKfycbzkq1qgQSlTt1Tg67k6yvFowaZ7lEJPfoVsL3mSrun8I6Vx9CdKCHQpoLYTlNHu7Sg/exec';
 const PALETTE = [['#FF9F1C','#E67E00'],['#1E90FF','#0F5FA8'],['#2BB45A','#1A8A3E'],['#8B6CF0','#5B3CC4'],['#F06292','#C2185B'],['#26A69A','#00796B'],['#F0504F','#C62828'],['#00ACC1','#00838F'],['#7E57C2','#4527A0'],['#5B6B7E','#36414F']];
-const OP_CLASS = { 'إيراد': 'op-in', 'مصروف': 'op-out', 'تحويل': 'op-tr' };
+const OP_CLASS = { 'إيراد': 'op-in', 'مصروف': 'op-out', 'تحويل': 'op-tr', 'إيصال صرف لمورد': 'op-sup', 'إيصال استلام من مورد': 'op-sup' };
+const SUP_OPS = ['إيصال صرف لمورد', 'إيصال استلام من مورد'];
+const DEFAULT_SUPPLIER = 'ابو سمرة';
+// عكس إيصال الصرف بيرجّع فلوس للخزنة، وعكس الاستلام بيطلّع فلوس
+function opsFor(m) {
+  const out = /صرف/.test(m.vtype || '') ? true : /استلام/.test(m.vtype || '') ? false : ['إيراد', 'تحويل', 'إيصال استلام من مورد'].includes(m.op);
+  return out ? ['إيراد', 'تحويل', 'إيصال استلام من مورد'] : ['مصروف', 'إيصال صرف لمورد'];
+}
+// اقتراح للكلمة: الملاحظة من غير أرقام الفواتير والتواريخ
+function suggestKw(note) {
+  return shortNote(note).split(/\s+(?:ف\s*-?\s*\d|رقم\s*\d|\d{3,}|\d{1,2}\/\d{1,2})/)[0].trim() || shortNote(note);
+}
 
 const $ = id => document.getElementById(id);
 const st = { state: null, items: {}, busy: false, screen: 'q', q: '', closedCards: new Set(), errs: {} };
@@ -574,7 +589,7 @@ function pCard(m) {
 }
 function qCard(m) {
   const isErr = m.status === 'خطأ';
-  const ops = ['إيراد', 'مصروف', 'تحويل'];
+  const ops = opsFor(m);
   // إيصال صرف ملاحظته فيها «تحصيل» (اتفحص قبل قاعدة التحويل): نختار التحويل من خزنة التحصيل جاهز
   const collect = /صرف/.test(m.vtype || '') && /تحصيل/.test(norm(m.note));
   const op = collect && m.op !== 'تحويل' ? 'تحويل' : m.op;
@@ -584,13 +599,15 @@ function qCard(m) {
     '<div class="q-msg">' + (isErr ? 'حصل خطأ: ' : '') + esc(m.msg) + (collect && m.op !== 'تحويل' ? '<br>👈 ده تحصيل: اخترتلك «تحويل» من «تحصيل خاص بالمخزن» — راجع ودوس اعتمد' : '') + '</div>' +
     '<div class="ctrls"><select class="q-op">' + ops.map(o => '<option value="' + o + '"' + (op === o ? ' selected' : '') + '>' + o + '</option>').join('') + '</select>' +
     '<select class="q-item"><option value="">دوس «تحديث البنود» لو القايمة فاضية</option></select></div>' +
-    '<label class="rule"><input type="checkbox" class="q-rule"> احفظها قاعدة للكلمة دي</label>' +
+    '<label class="rule"><input type="checkbox" class="q-rule"> احفظها قاعدة: أي ملاحظة فيها الكلمة دي تاخد نفس الاختيار</label>' +
+    '<input class="kw hidden" value="' + esc(suggestKw(m.note)) + '" placeholder="اكتب الكلمة، زي: خصم 2%">' +
     '<div class="btns"><button class="btn green sm q-yes">اعتمد</button><button class="btn ghost sm q-reload">تحديث البنود</button>' +
     '<button class="btn bad sm q-no">تجاهل</button></div></div></div>';
 }
 function dCard(m) {
   const ok = m.status === 'تم';
-  return '<div class="card cd' + (ok ? '' : ' rej') + (isOpen(m) ? ' open' : '') + '">' + sumRow(m, '', '<span class="tag">' + (ok ? '✓ تم' : esc(m.status || 'مرفوض')) + '</span>') +
+  const cxl = ok && /^اتلغى/.test(m.msg || '');
+  return '<div class="card cd' + (ok ? '' : ' rej') + (cxl ? ' cxl' : '') + (isOpen(m) ? ' open' : '') + '">' + sumRow(m, '', '<span class="tag">' + (cxl ? '⇄ اتلغوا ببعض' : ok ? '✓ تم' : esc(m.status || 'مرفوض')) + '</span>') +
     '<div class="more"><div class="meta">' + esc(m.msg || '') + '<br>الملاحظة: «' + esc(m.note) + '»<br><span class="num">' + esc(String(m.doneAt || '').slice(11, 16)) + '</span> — ' + esc(m.by) + '</div></div></div>';
 }
 
@@ -612,6 +629,7 @@ function wire() {
   cards.forEach(c => {
     if (c.classList.contains('open')) brs[c.dataset.branch] = true;
     c.querySelector('.q-op').onchange = () => fillItems(c);
+    c.querySelector('.q-rule').onchange = e => { const k = c.querySelector('.kw'); k.classList.toggle('hidden', !e.target.checked); if (e.target.checked) k.focus(); };
     c.querySelector('.q-yes').onclick = () => answer(c);
     c.querySelector('.q-no').onclick = () => reject(c.dataset.id);
     c.querySelector('.q-reload').onclick = () => loadItems(c.dataset.branch, true);
@@ -641,9 +659,12 @@ function fillItems(c) {
   const op = c.querySelector('.q-op').value;
   const list = (st.items[c.dataset.branch] || {})[op] || [];
   const want = c.dataset.want;
-  const ph = op === 'تحويل' ? '— اختار الخزنة اللي هيتحوّل منها —' : '— اختار البند —';
+  const isSup = SUP_OPS.includes(op);
+  const ph = op === 'تحويل' ? '— اختار الخزنة اللي هيتحوّل منها —' : isSup ? '— اختار المورد —' : '— اختار البند —';
+  // المورد: «ابو سمرة» متختار جاهز لو مفيش اختيار تاني
+  let pick = list.find(t => t === want) || (isSup ? list.find(t => norm(t) === norm(DEFAULT_SUPPLIER)) : null) || '';
   c.querySelector('.q-item').innerHTML = '<option value="">' + ph + '</option>' +
-    list.map(t => '<option' + (t === want ? ' selected' : '') + '>' + esc(t) + '</option>').join('');
+    list.map(t => '<option' + (t === pick ? ' selected' : '') + '>' + esc(t) + '</option>').join('');
 }
 
 // ---------- العمليات ----------
@@ -695,11 +716,13 @@ async function answer(c) {
   const op = c.querySelector('.q-op').value;
   const item = c.querySelector('.q-item').value;
   const rule = c.querySelector('.q-rule').checked;
-  if (!item) return toast(op === 'تحويل' ? 'اختار الخزنة اللي هيتحوّل منها' : 'اختار البند الأول. لو مش موجود، ضيفه في البرنامج ودوس «تحديث البنود»', 'bad');
+  const keyword = (c.querySelector('.kw').value || '').trim();
+  if (!item) return toast(op === 'تحويل' ? 'اختار الخزنة اللي هيتحوّل منها' : SUP_OPS.includes(op) ? 'اختار المورد' : 'اختار البند الأول. لو مش موجود، ضيفه في البرنامج ودوس «تحديث البنود»', 'bad');
+  if (rule && !keyword) return toast('اكتب الكلمة اللي القاعدة هتدوّر عليها', 'bad');
   const btn = c.querySelector('.q-yes'); btn.disabled = true;
   try {
-    await api('answer', { id: c.dataset.id, op: op, item: item, saveRule: rule });
-    toast('اتعتمد — الحركة نزلت في «مستنية تأكيد»', 'ok');
+    const r = await api('answer', { id: c.dataset.id, op: op, item: item, saveRule: rule, keyword: keyword });
+    toast('اتعتمد — الحركة نزلت في «مستنية تأكيد»' + (rule ? ' — واتحفظت قاعدة «' + keyword + '»' + (r && r.applied ? ' واتطبقت على ' + r.applied + ' استفسار تاني' : '') : ''), 'ok');
     await load(true);
   } catch (e) { toast(arErr(e), 'bad'); btn.disabled = false; }
 }

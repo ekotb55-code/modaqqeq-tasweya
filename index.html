@@ -91,7 +91,8 @@
   .top-wrap { max-width: 760px; margin: 0 auto; }
 
   /* ===== المربعات ===== */
-  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 4px 0 12px; }
+  .tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 4px 0 12px; }
+  @media (max-width: 620px) { .tiles { grid-template-columns: repeat(3, 1fr); } .tile .n { font-size: 22px; } }
   .tile { border: 0; border-radius: 16px; padding: 12px 12px 10px; color: #fff; text-align: right; cursor: pointer; position: relative; overflow: hidden; box-shadow: 0 6px 16px rgba(0,0,0,.10); transition: transform .15s; }
   .tile:active { transform: scale(.97); }
   .tile::after { content: ''; position: absolute; left: -18px; bottom: -26px; width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,.14); }
@@ -104,6 +105,20 @@
   .t-p { background: linear-gradient(135deg, #1E90FF, #0F5FA8); }
   .t-d { background: linear-gradient(135deg, #2BB45A, #1A8A3E); }
   .t-b { background: linear-gradient(135deg, #F0504F, #C62828); }
+  .t-c { background: linear-gradient(135deg, #F0504F, #C62828); }
+  .t-m { background: linear-gradient(135deg, #8B6CF0, #5B3CC4); }
+  /* شاشة مشاكل الاتصال وشاشة الرصيد */
+  .prob { margin: 6px 0 8px; background: linear-gradient(135deg, #FDECEC, #FBDADA); border: 1.5px solid #F2B3B3; color: #B71C1C; border-radius: 12px; padding: 10px; font-size: 13px; font-weight: 800; line-height: 1.7; }
+  .prob small { display: block; color: #9A4A4A; font-weight: 700; font-size: 11.5px; margin-top: 4px; }
+  .prob-btn { width: 100%; }
+  .money { margin: 6px 0 8px; background: #fff; border: 1.5px solid #E1D8FB; border-radius: 12px; padding: 8px 10px; }
+  .money .ln { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; font-weight: 700; padding: 3px 0; color: #36414F; }
+  .money .ln b { font-weight: 900; white-space: nowrap; }
+  .money .ln.short { border-top: 1px dashed #D6CBF7; margin-top: 4px; padding-top: 7px; color: #C62828; font-size: 14.5px; }
+  .money .hint { font-size: 11.5px; color: var(--mute); margin-top: 6px; line-height: 1.6; }
+  .trow { display: flex; gap: 8px; align-items: baseline; font-size: 12px; padding: 6px 2px; border-bottom: 1px solid #EEF2F8; }
+  .trow .a { font-weight: 900; white-space: nowrap; }
+  .trow .n { color: var(--mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 
   .bar { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
   .bar input { flex: 1; min-width: 0; padding: 11px 14px; border: 1.5px solid var(--line); border-radius: 12px; outline: none; background: #fff; }
@@ -306,6 +321,8 @@
         <button class="tile t-q" data-s="q"><span class="e">❓</span><span class="n num" id="nQ">0</span><span class="l">الاستفسارات</span></button>
         <button class="tile t-p" data-s="p"><span class="e">⏳</span><span class="n num" id="nP">0</span><span class="l">مستني تأكيد</span></button>
         <button class="tile t-d" data-s="d"><span class="e">✅</span><span class="n num" id="nD">0</span><span class="l">اتعمل النهارده</span></button>
+        <button class="tile t-c" data-s="c"><span class="e">🔌</span><span class="n num" id="nC">0</span><span class="l">مشاكل الاتصال</span></button>
+        <button class="tile t-m" data-s="m"><span class="e">💰</span><span class="n num" id="nM">0</span><span class="l">رصيد مش مكفي</span></button>
       </div>
       <div class="bar">
         <input id="q" type="search" placeholder="🔎 دوّر باسم المحل" autocomplete="off">
@@ -342,8 +359,8 @@ function suggestKw(note) {
 }
 
 const $ = id => document.getElementById(id);
-const st = { state: null, items: {}, busy: false, screen: 'q', q: '', closedCards: new Set(), errs: {}, cprog: {} };
-const SCREENS = { q: { t: '❓ الاستفسارات', z: 'مفيش استفسارات' }, p: { t: '⏳ مستني تأكيد', z: 'مفيش حركات مستنية' }, d: { t: '✅ اتعمل النهارده', z: 'لسه مفيش' } };
+const st = { state: null, items: {}, busy: false, screen: 'q', q: '', closedCards: new Set(), errs: {}, cprog: {}, hid: {} };
+const SCREENS = { q: { t: '❓ الاستفسارات', z: 'مفيش استفسارات' }, p: { t: '⏳ مستني تأكيد', z: 'مفيش حركات مستنية' }, d: { t: '✅ اتعمل النهارده', z: 'لسه مفيش' }, c: { t: '🔌 مشاكل الاتصال', z: 'مفيش مشاكل' }, m: { t: '💰 رصيد خزنة التحصيل مش مكفي', z: 'الرصيد مكفي' } };
 
 // ---------- أدوات ----------
 function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { return null; } }
@@ -435,6 +452,7 @@ function afterLogin(r) {
   if (r.sheetUrl) { $('sheetBtn').href = r.sheetUrl; $('sheetBtn').classList.remove('hidden'); }
   if (SCREENS[ls('tsw_screen')]) st.screen = ls('tsw_screen');
   try { st.errs = JSON.parse(ls('tsw_errs') || '{}') || {}; } catch (e) { st.errs = {}; }
+  try { st.hid = JSON.parse(ls('tsw_hid') || '{}') || {}; } catch (e) { st.hid = {}; }
   try { st.closedCards = new Set(JSON.parse(ls('tsw_closed') || '[]')); } catch (e) { st.closedCards = new Set(); }
   showInstall(); hh();
   load();
@@ -472,7 +490,30 @@ function shopsData() {
     else if (m.status === 'مقترح' || m.status === 'جاري التنفيذ') get(m.branch).p.push(m);
   });
   (s.recent || []).forEach(m => { if (String(m.doneAt || '').slice(0, 10) === t) get(m.branch).d.push(m); });
-  return Object.values(map);
+  const all = Object.values(map);
+  all.forEach(x => { x.c = probOf(x.b); x.m = shortOf(x); });
+  return all;
+}
+// مشكلة الاتصال: اللي السيرفر حافظها (من آخر فحص)، ولو مفيش فاللي حصلت على الجهاز ده
+function probOf(b) {
+  const s = String(b.err || ''), i = s.indexOf(' | ');
+  if (s) return { msg: i > 0 ? s.slice(i + 3) : s, at: i > 0 ? s.slice(11, 16) : '', when: i > 0 ? s.slice(0, 16) : '', key: s, srv: true };
+  const l = st.errs[b.name];
+  return l ? { msg: l.msg, at: l.at, when: '', key: 'l:' + l.msg, srv: false } : null;
+}
+// رصيد خزنة التحصيل مقابل التحويلات اللي مستنية
+function shortOf(x) {
+  const col = norm(st.state.collect || 'تحصيل خاص بالمخزن');
+  const mv = x.p.concat(x.q).filter(m => m.op === 'تحويل' && norm(m.item) === col && ['مقترح', 'خطأ', 'جاري التنفيذ'].includes(m.status));
+  if (!mv.length) return null;
+  const need = mv.reduce((a, m) => a + (Number(m.amount) || 0), 0);
+  let bal = x.b.coll === '' || x.b.coll == null ? NaN : Number(x.b.coll);
+  if (isNaN(bal)) {   // لحد ما الفرع يتفحص تاني: الرصيد من رسالة التحذير
+    for (const m of mv) { const r = /فيها\s+(-?[\d,]+(?:\.\d+)?)\s+بس/.exec(m.msg || ''); if (r) { bal = Number(r[1].replace(/,/g, '')); break; } }
+  }
+  if (isNaN(bal)) return null;
+  const short = need - bal;
+  return short > 0.004 ? { bal: bal, need: need, short: short, mv: mv } : null;
 }
 function setErr(br, msg) {
   if (msg) st.errs[br] = { msg: msg, at: new Date().toTimeString().slice(0, 5) }; else delete st.errs[br];
@@ -495,8 +536,23 @@ function render() {
   const all = shopsData();
   const sum = k => all.reduce((a, x) => a + x[k].length, 0);
   $('nQ').textContent = sum('q'); $('nP').textContent = sum('p'); $('nD').textContent = sum('d');
+  $('nC').textContent = all.filter(x => x.c).length; $('nM').textContent = all.filter(x => x.m).length;
   document.querySelectorAll('.tile').forEach(t => t.classList.toggle('on', t.dataset.s === st.screen));
   const k = st.screen;
+
+  // شاشة مشاكل الاتصال وشاشة الرصيد: الفروع اللي فيها المشكلة بس
+  if (k === 'c' || k === 'm') {
+    const fq = norm(st.q);
+    const fl = all.filter(x => x[k] && (!fq || norm(x.b.name).includes(fq)));
+    fl.sort((a, b) => k === 'm' ? b.m.short - a.m.short : a.b.name.localeCompare(b.b.name, 'ar'));
+    const tot = k === 'm' ? fl.reduce((a, x) => a + x.m.short, 0) : 0;
+    $('scrTitle').innerHTML = SCREENS[k].t + ' <small>— ' + fl.length + ' فرع' + (tot ? ' — الناقص كله <span class="num">' + money(tot) + '</span>' : '') + '</small>';
+    $('board').innerHTML = fl.length ? fl.map(x => column(x, k)).join('') :
+      '<div class="empty">' + (st.q ? 'مفيش فروع بالاسم ده' : k === 'c' ? '👌 كل الفروع شغالة ومفيش مشاكل اتصال' : '👌 مفيش فرع رصيد خزنة التحصيل بتاعه ناقص') + '</div>';
+    wire();
+    hbarSync();
+    return;
+  }
 
   const qn = norm(st.q);
   const list = all.filter(x => !qn || norm(x.b.name).includes(qn));
@@ -555,15 +611,28 @@ document.addEventListener('keydown', e => {
 });
 // عجلة الماوس فوق الشريط تحرك يمين وشمال
 $('hbar').addEventListener('wheel', e => { e.preventDefault(); $('board').scrollBy({ left: e.deltaX || -e.deltaY }); }, { passive: false });
+// وفوق رأس العمود أو أي حتة فاضية في اللوحة كمان، وShift + البكرة من أي مكان
+document.addEventListener('wheel', e => {
+  if ($('main').classList.contains('hidden') || document.querySelector('.modal-bg') || e.target.closest('#hbar')) return;
+  const b = $('board');
+  if (b.scrollWidth <= b.clientWidth + 4) return;
+  const onCards = e.target.closest('.col .bd, .col .cfm') && !e.target.closest('.zero-note');
+  if (!e.shiftKey && (!e.target.closest('#board') || onCards)) return;
+  const unit = e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? b.clientWidth : 1;
+  const d = (e.shiftKey ? -(e.deltaX || e.deltaY) : Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : -e.deltaY) * unit;
+  if (!d) return;
+  e.preventDefault();
+  b.scrollLeft += d;
+}, { passive: false });
 
 function column(x, k) {
   const b = x.b, name = b.name;
   const col = PALETTE[hash(name) % PALETTE.length];
-  const n = x[k].length;
+  const n = k === 'c' ? 1 : k === 'm' ? x.m.mv.length : x[k].length;
   const chip = (cls, e, c, l) => '<span class="chip ' + cls + (c ? '' : ' z') + '">' + e + ' <span class="num">' + c + '</span> ' + l + '</span>';
   const bal = b.balance === '' || b.balance == null ? '—' : money(b.balance);
-  const er = st.errs[name];
-  let h = '<div class="col' + (er ? ' has-alert' : '') + '" data-col="' + esc(name) + '" style="--c1:' + col[0] + ';--c2:' + col[1] + '"><div class="hd">' +
+  const er = x.c && k !== 'c' && st.hid[name] !== x.c.key ? x.c : null;
+  let h = '<div class="col' + (x.c ? ' has-alert' : '') + '" data-col="' + esc(name) + '" style="--c1:' + col[0] + ';--c2:' + col[1] + '"><div class="hd">' +
     '<div class="r1"><b title="' + esc(name) + '">' + esc(name) + '</b><span class="cnt num' + (n ? '' : ' z') + '">' + n + '</span></div>' +
     '<div class="chips">' + chip('ch-q', '❓', x.q.length, 'استفسار') + chip('ch-p', '⏳', x.p.length, 'تأكيد') + chip('ch-d', '✅', x.d.length, 'النهارده') + '</div>' +
     '<div class="r3"><span class="bal num ' + balClass(b.balance) + '" title="رصيد خزنة الدعم">' + bal + '</span><span class="sp"></span>' +
@@ -572,7 +641,9 @@ function column(x, k) {
     (er ? '<div class="alert">⚠️<span>' + esc(er.msg) + ' <small class="num">(' + esc(er.at) + ')</small></span><button data-clr="' + esc(name) + '" title="إخفاء">×</button></div>' : '') +
     '</div>';
   h += '<div class="bd">';
-  if (!n) h += '<div class="zero-note"><b class="num">0</b>' + SCREENS[k].z + '</div>';
+  if (k === 'c') h += probBox(x.c, name);
+  else if (k === 'm') h += moneyBox(x.m);
+  else if (!n) h += '<div class="zero-note"><b class="num">0</b>' + SCREENS[k].z + '</div>';
   else if (k === 'q') h += x.q.map(qCard).join('');
   else if (k === 'p') h += x.p.map(pCard).join('');
   else h += x.d.map(dCard).join('');
@@ -583,6 +654,18 @@ function column(x, k) {
   return h + '</div>';
 }
 
+function probBox(p, name) {
+  return '<div class="prob">🔌 ' + esc(p.msg) + (p.when || p.at ? '<small>آخر محاولة: <span class="num">' + esc(p.when || ('النهارده ' + p.at)) + '</span></small>' : '') + '</div>' +
+    '<button class="btn green sm prob-btn" data-scan="' + esc(name) + '">🔄 جرّب الفحص تاني</button>';
+}
+function moneyBox(s) {
+  return '<div class="money">' +
+    '<div class="ln"><span>رصيد «' + esc(st.state.collect || 'تحصيل خاص بالمخزن') + '»</span><b class="num">' + money(s.bal) + '</b></div>' +
+    '<div class="ln"><span>المطلوب للتحويلات (' + s.mv.length + ')</span><b class="num">' + money(s.need) + '</b></div>' +
+    '<div class="ln short"><span>الناقص</span><b class="num">' + money(s.short) + '</b></div>' +
+    '<div class="hint">المحاسب ينقل الناقص لخزنة التحصيل، وبعدها دوس «🔄 فحص» وأكّد التحويلات من «مستني تأكيد».</div></div>' +
+    s.mv.map(m => '<div class="trow"><span class="a num">' + money(m.amount) + '</span><span class="n" title="' + esc(m.note) + '">' + esc(shortNote(m.note)) + ' — <span class="num">' + esc(String(m.stime || '').slice(0, 10)) + '</span></span></div>').join('');
+}
 function opPill(op) { return '<span class="pill ' + (OP_CLASS[op] || 'op-tr') + '">' + esc(op || '؟') + '</span>'; }
 // الكروت مفتوحة على طول، والتطبيق بيفتكر اللي إنت قفلته
 function isOpen(m) { return !st.closedCards.has(m.id); }
@@ -638,7 +721,11 @@ function wire() {
     saveClosed();
     const t = $('togAll'); if (t) t.textContent = document.querySelector('.card.open') ? '⇕ قفل الكل' : '⇕ فتح الكل';
   });
-  document.querySelectorAll('[data-clr]').forEach(b => b.onclick = () => { setErr(b.dataset.clr, null); render(); });
+  document.querySelectorAll('[data-clr]').forEach(b => b.onclick = () => {
+    const nm = b.dataset.clr, x = shopsData().find(y => y.b.name === nm);
+    if (x && x.c && x.c.srv) { st.hid[nm] = x.c.key; ls('tsw_hid', JSON.stringify(st.hid)); }   // يرجع يظهر لو حصلت مشكلة جديدة
+    setErr(nm, null); render();
+  });
   const cards = Array.from(document.querySelectorAll('.q'));
   const brs = {};
   cards.forEach(c => {

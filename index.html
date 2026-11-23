@@ -166,6 +166,7 @@
   .bal.na { background: #F0F3F7; color: var(--mute); }
   .mini { border: 1.5px solid var(--line); background: #fff; color: var(--blue); border-radius: 9px; padding: 3px 9px; font-size: 12px; font-weight: 800; cursor: pointer; }
   .mini:disabled { opacity: .5; }
+  a.mini { text-decoration: none; display: inline-block; }
   .col .bd { padding: 4px 8px 10px; background: #FBFCFE; min-height: 56px; }
   .col .zero-note { text-align: center; color: #A0ABB8; font-size: 12.5px; padding: 16px 6px 8px; }
   .col .zero-note b { display: block; font-size: 22px; color: #C9D2DD; }
@@ -636,6 +637,7 @@ function column(x, k) {
     '<div class="r1"><b title="' + esc(name) + '">' + esc(name) + '</b><span class="cnt num' + (n ? '' : ' z') + '">' + n + '</span></div>' +
     '<div class="chips">' + chip('ch-q', '❓', x.q.length, 'استفسار') + chip('ch-p', '⏳', x.p.length, 'تأكيد') + chip('ch-d', '✅', x.d.length, 'النهارده') + '</div>' +
     '<div class="r3"><span class="bal num ' + balClass(b.balance) + '" title="رصيد خزنة الدعم">' + bal + '</span><span class="sp"></span>' +
+    (b.link ? '<a class="mini" href="' + esc(posUrl(b.link)) + '" target="_blank" rel="noopener" title="افتح برنامج البيع بتاع ' + esc(name) + '">🔗 البرنامج</a>' : '') +
     '<button class="mini" data-scan="' + esc(name) + '" title="آخر فحص: ' + esc(b.scanned || 'لسه') + '">🔄 فحص</button></div>' +
     (k === 'p' && st.cprog[name] ? '<div class="ptop">' + progLine(name) + '</div>' : '') +
     (er ? '<div class="alert">⚠️<span>' + esc(er.msg) + ' <small class="num">(' + esc(er.at) + ')</small></span><button data-clr="' + esc(name) + '" title="إخفاء">×</button></div>' : '') +
@@ -666,6 +668,8 @@ function moneyBox(s) {
     '<div class="hint">المحاسب ينقل الناقص لخزنة التحصيل، وبعدها دوس «🔄 فحص» وأكّد التحويلات من «مستني تأكيد».</div></div>' +
     s.mv.map(m => '<div class="trow"><span class="a num">' + money(m.amount) + '</span><span class="n" title="' + esc(m.note) + '">' + esc(shortNote(m.note)) + ' — <span class="num">' + esc(String(m.stime || '').slice(0, 10)) + '</span></span></div>').join('');
 }
+// لينك برنامج البيع بتاع الفرع (من تاب «ربط برامج البيع»)
+function posUrl(l) { l = String(l || '').trim(); return /^https?:\/\//i.test(l) ? l : 'https://' + l; }
 function opPill(op) { return '<span class="pill ' + (OP_CLASS[op] || 'op-tr') + '">' + esc(op || '؟') + '</span>'; }
 // الكروت مفتوحة على طول، والتطبيق بيفتكر اللي إنت قفلته
 function isOpen(m) { return !st.closedCards.has(m.id); }

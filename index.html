@@ -174,6 +174,17 @@
   .op-in { background: linear-gradient(135deg, #2BB45A, #1A8A3E); }
   .op-out { background: linear-gradient(135deg, #F0504F, #C62828); }
   .op-tr { background: linear-gradient(135deg, #8B6CF0, #5B3CC4); }
+  /* التسجيل حركة حركة */
+  .cprog { margin-top: 7px; }
+  .cprog .bar { height: 7px; background: #E5EEF8; border-radius: 99px; overflow: hidden; }
+  .cprog .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #2BB45A, #1E90FF); border-radius: 99px; transition: width .35s; }
+  .cprog span { display: block; margin-top: 4px; font-size: 12px; font-weight: 800; color: var(--mute); text-align: center; }
+  .card .cstat { margin: 0 9px 8px; font-size: 12px; font-weight: 800; border-radius: 8px; padding: 3px 8px; line-height: 1.6; }
+  .cstat.run { background: #E4F0FD; color: #0F5FA8; }
+  .cstat.ok { background: #E5F6EB; color: #1A8A3E; }
+  .cstat.bad { background: #FDECEC; color: #C62828; }
+  .card.c-ok { border-color: #8FD3A6 !important; background: linear-gradient(90deg, #fff, #EEFAF2) !important; }
+  .card.c-bad { border-color: #F2A9A9 !important; }
   .op-sup { background: linear-gradient(135deg, #26A69A, #00796B); }
   .card .kw { width: 100%; padding: 8px; border: 1.5px solid #EBD7B4; border-radius: 10px; background: #fff; margin: -2px 0 8px; font-family: inherit; }
   .card.cd.cxl { border-color: #C3DDF8; background: linear-gradient(90deg, #fff, #F2F8FF); }
@@ -331,7 +342,7 @@ function suggestKw(note) {
 }
 
 const $ = id => document.getElementById(id);
-const st = { state: null, items: {}, busy: false, screen: 'q', q: '', closedCards: new Set(), errs: {} };
+const st = { state: null, items: {}, busy: false, screen: 'q', q: '', closedCards: new Set(), errs: {}, cprog: {} };
 const SCREENS = { q: { t: '❓ الاستفسارات', z: 'مفيش استفسارات' }, p: { t: '⏳ مستني تأكيد', z: 'مفيش حركات مستنية' }, d: { t: '✅ اتعمل النهارده', z: 'لسه مفيش' } };
 
 // ---------- أدوات ----------
@@ -552,11 +563,12 @@ function column(x, k) {
   const chip = (cls, e, c, l) => '<span class="chip ' + cls + (c ? '' : ' z') + '">' + e + ' <span class="num">' + c + '</span> ' + l + '</span>';
   const bal = b.balance === '' || b.balance == null ? '—' : money(b.balance);
   const er = st.errs[name];
-  let h = '<div class="col' + (er ? ' has-alert' : '') + '" style="--c1:' + col[0] + ';--c2:' + col[1] + '"><div class="hd">' +
+  let h = '<div class="col' + (er ? ' has-alert' : '') + '" data-col="' + esc(name) + '" style="--c1:' + col[0] + ';--c2:' + col[1] + '"><div class="hd">' +
     '<div class="r1"><b title="' + esc(name) + '">' + esc(name) + '</b><span class="cnt num' + (n ? '' : ' z') + '">' + n + '</span></div>' +
     '<div class="chips">' + chip('ch-q', '❓', x.q.length, 'استفسار') + chip('ch-p', '⏳', x.p.length, 'تأكيد') + chip('ch-d', '✅', x.d.length, 'النهارده') + '</div>' +
     '<div class="r3"><span class="bal num ' + balClass(b.balance) + '" title="رصيد خزنة الدعم">' + bal + '</span><span class="sp"></span>' +
     '<button class="mini" data-scan="' + esc(name) + '" title="آخر فحص: ' + esc(b.scanned || 'لسه') + '">🔄 فحص</button></div>' +
+    (k === 'p' && st.cprog[name] ? '<div class="ptop">' + progLine(name) + '</div>' : '') +
     (er ? '<div class="alert">⚠️<span>' + esc(er.msg) + ' <small class="num">(' + esc(er.at) + ')</small></span><button data-clr="' + esc(name) + '" title="إخفاء">×</button></div>' : '') +
     '</div>';
   h += '<div class="bd">';
@@ -566,7 +578,8 @@ function column(x, k) {
   else h += x.d.map(dCard).join('');
   h += '</div>';
   const can = k === 'p' ? x.p.filter(m => m.status === 'مقترح').length : 0;
-  if (can) h += '<div class="cfm"><button class="btn green sm" data-confirm="' + esc(name) + '">✓ تأكيد المحدد</button></div>';
+  if (k === 'p' && st.cprog[name]) h += '<div class="cfm">' + progBox(name) + '</div>';
+  else if (can) h += '<div class="cfm"><button class="btn green sm" data-confirm="' + esc(name) + '">✓ تأكيد المحدد</button></div>';
   return h + '</div>';
 }
 
@@ -578,10 +591,12 @@ function pCard(m) {
   const running = m.status === 'جاري التنفيذ';
   const warn = /^⚠/.test(m.msg || '');
   const what = m.op === 'تحويل' ? opPill('تحويل') + ' من «' + esc(m.item) + '»' : opPill(m.op) + ' «' + esc(m.item) + '»';
-  const lead = running ? '<span class="pill op-tr">جاري</span>' : '<input type="checkbox" class="pick" data-branch="' + esc(m.branch) + '" value="' + esc(m.id) + '" checked>';
-  return '<div class="card cp' + (warn ? ' warn' : '') + (isOpen(m) ? ' open' : '') + '">' + sumRow(m, lead) +
+  const pr = st.cprog[m.branch], rs = pr && pr.res[m.id];
+  const lead = running && !rs ? '<span class="pill op-tr">جاري</span>' : '<input type="checkbox" class="pick" data-branch="' + esc(m.branch) + '" value="' + esc(m.id) + '"' + (!pr || rs ? ' checked' : '') + (pr ? ' disabled' : '') + '>';
+  return '<div class="card cp' + (warn ? ' warn' : '') + (isOpen(m) ? ' open' : '') + (rs && rs.cls === 'ok' ? ' c-ok' : rs && rs.cls === 'bad' ? ' c-bad' : '') + '">' + sumRow(m, lead) +
     '<div class="will">' + what + '</div>' +
     (warn ? '<div class="wshort">⚠️ رصيد خزنة التحصيل مش مكفّي</div>' : '') +
+    (rs ? '<div class="cstat ' + rs.cls + '">' + esc(rs.text) + '</div>' : '') +
     '<div class="more"><div class="meta">' + esc(m.vtype) + ' — ' + esc(m.bayan) + '<br>الملاحظة: «' + esc(m.note) + '»<br><span class="num">' + esc(m.stime) + '</span></div>' +
     (warn ? '<div class="wmsg">' + esc(m.msg) + '</div>' : '') +
     (running ? '' : '<div style="margin-top:8px"><button class="btn bad sm" data-reject="' + esc(m.id) + '">رفض</button></div>') +
@@ -688,19 +703,71 @@ async function scanList(names) {
 }
 $('btnScanAll').onclick = () => scanList((st.state ? st.state.branches : []).map(b => b.name));
 
+// ---------- التأكيد: حركة حركة، وكل كارت يبان عليه اللي حصله ----------
+function progBox(br) {
+  const p = st.cprog[br];
+  return '<button class="btn green sm" disabled>' + (p.done < p.n ? 'جاري التسجيل ' + (p.done + 1) + ' من ' + p.n : 'خلص التسجيل') + '</button>' + progLine(br);
+}
+function progLine(br) {
+  const p = st.cprog[br];
+  const pct = Math.round(p.done / p.n * 100);
+  return '<div class="cprog"><div class="bar"><i style="width:' + pct + '%"></i></div><span>تم ' + p.done + ' من ' + p.n +
+    (p.ok ? ' — اتسجّل ' + p.ok : '') + (p.bad ? ' — ما اتسجّلش ' + p.bad : '') + '</span></div>';
+}
+function paintProgress(br) {
+  const p = st.cprog[br];
+  const col = Array.from(document.querySelectorAll('.col')).find(c => c.dataset.col === br);
+  if (!p || !col) return;
+  const box = col.querySelector('.cfm');
+  if (box) box.innerHTML = progBox(br);
+  let top = col.querySelector('.ptop');
+  if (!top) { top = document.createElement('div'); top.className = 'ptop'; col.querySelector('.hd').appendChild(top); }
+  top.innerHTML = progLine(br);
+  col.querySelectorAll('.pick').forEach(c => {
+    c.disabled = true;
+    const r = p.res[c.value], card = c.closest('.card');
+    if (!r || !card) return;
+    let el = card.querySelector('.cstat');
+    if (!el) { el = document.createElement('div'); card.insertBefore(el, card.querySelector('.more')); }
+    el.className = 'cstat ' + r.cls; el.textContent = r.text;
+    card.classList.toggle('c-ok', r.cls === 'ok'); card.classList.toggle('c-bad', r.cls === 'bad');
+  });
+}
 async function confirmBranch(br, btn) {
+  if (st.cprog[br]) return;
   const ids = Array.from(document.querySelectorAll('.pick')).filter(c => c.checked && c.dataset.branch === br).map(c => c.value);
   if (!ids.length) return toast('علّم على حركة واحدة على الأقل', 'bad');
-  if (!(await ask('تأكيد التسجيل', 'هيتسجّل <b>' + ids.length + '</b> حركة في برنامج <b>' + esc(br) + '</b>.', { yes: 'سجّل' }))) return;
-  st.busy = true; btn.disabled = true; btn.textContent = 'جاري التسجيل...';
-  strip('جاري التسجيل في ' + br + '...');
-  try {
-    const r = await api('confirm', { branch: br, ids: ids });
-    const msg = br + ': اتسجّل ' + r.done + (r.failed ? ' — ما اتسجّلش ' + r.failed : '') + ' — رصيد خزنة الدعم قبل ' + money(r.before) + ' وبعد ' + money(r.after);
-    toast(msg, (r.failed > 0 || Number(r.after) !== 0) ? 'bad' : 'ok');
-    setErr(br, null);
-  } catch (e) { setErr(br, 'التسجيل: ' + arErr(e)); toast(br + ': ' + arErr(e), 'bad'); }
-  st.busy = false; strip(null);
+  if (!(await ask('تأكيد التسجيل', 'هيتسجّل <b>' + ids.length + '</b> حركة في برنامج <b>' + esc(br) + '</b>، واحدة واحدة.', { yes: 'سجّل' }))) return;
+  const p = st.cprog[br] = { n: ids.length, done: 0, ok: 0, bad: 0, res: {}, before: null, after: null };
+  paintProgress(br);
+  let stop = '';
+  for (const id of ids) {
+    if (stop) { p.res[id] = { cls: 'bad', text: '✗ ما اتبعتش: ' + stop }; p.bad++; p.done++; paintProgress(br); continue; }
+    p.res[id] = { cls: 'run', text: '⏳ بيتسجّل دلوقتي…' };
+    paintProgress(br);
+    strip('جاري التسجيل في ' + br + ' (' + (p.done + 1) + ' من ' + p.n + ')', p.done / p.n * 100);
+    try {
+      const r = await api('confirm', { branch: br, ids: [id] });
+      if (p.before === null) p.before = r.before;
+      p.after = r.after;
+      const x = (r.results || []).find(z => z.id === id) || {};
+      if (x.status === 'تم') { p.ok++; p.res[id] = { cls: 'ok', text: '✓ اتسجّل: ' + (x.msg || '') }; }
+      else { p.bad++; p.res[id] = { cls: 'bad', text: '✗ ما اتسجّلش: ' + (x.msg || x.status || 'حصلت مشكلة') }; }
+    } catch (e) {
+      const m = arErr(e);
+      p.bad++; p.res[id] = { cls: 'bad', text: '✗ ' + m };
+      if (e.auth || /الدخول|مفيش نت/.test(m)) stop = m;   // مشكلة دخول أو نت: ما نكملش الباقي
+    }
+    p.done++;
+    paintProgress(br);
+  }
+  strip(null);
+  toast(br + ': اتسجّل ' + p.ok + ' من ' + p.n + (p.bad ? ' — ما اتسجّلش ' + p.bad : '') +
+    (p.before !== null ? ' — رصيد خزنة الدعم قبل ' + money(p.before) + ' وبعد ' + money(p.after) : ''),
+    (p.bad || Number(p.after) !== 0) ? 'bad' : 'ok');
+  setErr(br, stop ? 'التسجيل: ' + stop : null);
+  await new Promise(r => setTimeout(r, 1800));   // نسيب النتيجة باينة شوية قبل ما الكروت تنزل «اتعمل النهارده»
+  delete st.cprog[br];
   await load(true);
 }
 

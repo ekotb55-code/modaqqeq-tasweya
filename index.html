@@ -924,5 +924,206 @@ window.addEventListener('resize', () => { hh(); hbarSync(); });
   showLogin();
 })();
 </script>
+<script>window.MDQ_TOUR_APP = 'tsw';</script>
+<script>
+/* ========== الجولة الإرشادية المنطوقة (مدقق) ==========
+   - الشاشة بتضلّم وتنوّر على حاجة حاجة مع شرح، والشرح بيتقري بصوت مصري (كلام متشكّل)
+   - بتظهر كاملة تاني مع كل تحديث للتطبيق (بنقارن تاريخ نشر الصفحة)
+   - زرار «؟» يعيد شرح الشاشة اللي انت فيها
+   الاستخدام: mdqTour.def('home', [{ el: '#id', t: 'العنوان', b: 'الشرح', s: 'الكلام المنطوق' }, ...])
+             mdqTour.maybe('home')  ← بعد ما الشاشة تظهر
+             mdqTour.screen = () => 'home'  ← الشاشة الحالية (لزرار ؟) */
+(function () {
+  const APP = (window.MDQ_TOUR_APP || 'app') + '_';
+  const defs = {};
+  let running = false;
+  const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+  // رقم النسخة = تاريخ نشر الصفحة (بيتغير لوحده مع كل تحديث)
+  function ver() {
+    const t = Date.parse(document.lastModified);
+    if (!t || Math.abs(Date.now() - t) < 60000) return lsGet('mdqTourLastVer_' + APP) || 'x';
+    const v = String(Math.floor(t / 60000));
+    lsSet('mdqTourLastVer_' + APP, v);
+    return v;
+  }
+  let voice = lsGet('mdqTourVoice') !== '0';
+  let arVoice = null;
+  function pickVoice() {
+    try {
+      const vs = speechSynthesis.getVoices().filter(v => /^ar/i.test(v.lang));
+      arVoice = vs.find(v => /^ar[-_]EG/i.test(v.lang)) || vs[0] || null;
+    } catch (e) {}
+  }
+  if ('speechSynthesis' in window) { pickVoice(); try { speechSynthesis.addEventListener('voiceschanged', pickVoice); } catch (e) {} }
+  const plain = s => String(s || '').replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}]/gu, '').replace(/[•☰←→«»"]/g, ' ');
+  function speak(step) {
+    if (!voice || !('speechSynthesis' in window)) return;
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(plain(step.s || (step.t + '. ' + step.b)));
+      u.lang = arVoice ? arVoice.lang : 'ar-EG'; if (arVoice) u.voice = arVoice;
+      u.rate = 0.95; u.volume = 1;
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+  function hush() { try { speechSynthesis.cancel(); } catch (e) {} }
+
+  const css = document.createElement('style');
+  css.textContent =
+    '.mdqt-bg{position:fixed;inset:0;z-index:99990;background:transparent}' +
+    '.mdqt-bg.dark{background:rgba(10,26,46,.84)}' +
+    '.mdqt-hole{position:fixed;z-index:99991;border:3px solid #FFD54F;border-radius:14px;box-shadow:0 0 0 9999px rgba(10,26,46,.84);pointer-events:none;transition:all .25s}' +
+    '.mdqt-b{position:fixed;z-index:99992;left:14px;right:14px;margin:auto;max-width:520px;background:#fff;color:#2B3A4C;border-radius:18px;padding:14px 16px 10px;box-shadow:0 10px 30px rgba(0,0,0,.3);direction:rtl;font-family:inherit;max-height:70vh;display:flex;flex-direction:column}' +
+    '.mdqt-h{display:flex;align-items:center;gap:8px}.mdqt-h b{flex:1;font-size:18px;font-weight:900;color:#0B3D6E}' +
+    '.mdqt-n{background:#E7F1FB;color:#1479D3;border-radius:20px;padding:2px 9px;font-size:13px;font-weight:700;white-space:nowrap}' +
+    '.mdqt-v{border:0;background:#E7F1FB;color:#1479D3;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer}.mdqt-v.off{background:#eee;color:#999}' +
+    '.mdqt-t{font-size:15.5px;line-height:1.7;white-space:pre-line;overflow:auto;margin:6px 0 8px}' +
+    '.mdqt-f{display:flex;align-items:center;gap:8px}.mdqt-f .sp{flex:1}' +
+    '.mdqt-f button{font-family:inherit;font-size:15px;font-weight:700;border-radius:12px;padding:9px 16px;cursor:pointer;border:0}' +
+    '.mdqt-skip{background:transparent;color:#1479D3}.mdqt-back{background:#fff;border:1.5px solid #C9D9EA!important;color:#1479D3}' +
+    '.mdqt-next{background:#1479D3;color:#fff}.mdqt-next.last{background:#2BB45A}' +
+    '.mdqt-help{position:fixed;z-index:9000;left:12px;bottom:12px;width:40px;height:40px;border-radius:50%;border:0;background:#1479D3;color:#fff;font-size:20px;font-weight:900;box-shadow:0 4px 14px rgba(20,121,211,.4);cursor:pointer;opacity:.85}';
+  document.head.appendChild(css);
+
+  function visible(el) {
+    if (!el) return false;
+    const r = el.getBoundingClientRect();
+    if (r.width < 4 || r.height < 4) return false;
+    const cs = getComputedStyle(el);
+    return cs.visibility !== 'hidden' && cs.display !== 'none' && el.closest('.hidden') === null;
+  }
+  const q = sel => { try { return typeof sel === 'string' ? document.querySelector(sel) : sel; } catch (e) { return null; } };
+
+  function run(id, steps) {
+    const list = steps.filter(s => s.always || !s.el || visible(q(s.el))).filter(s => !s.el || s.always || visible(q(s.el)));
+    if (!list.length) return Promise.resolve();
+    running = true;
+    return new Promise(resolve => {
+      let i = 0;
+      const bg = document.createElement('div'); bg.className = 'mdqt-bg';
+      const hole = document.createElement('div'); hole.className = 'mdqt-hole';
+      const b = document.createElement('div'); b.className = 'mdqt-b';
+      document.body.append(bg, hole, b);
+      function done() {
+        hush(); bg.remove(); hole.remove(); b.remove(); running = false;
+        lsSet('mdqTour_' + APP + id, ver());
+        window.removeEventListener('resize', place);
+        resolve();
+      }
+      function place() {
+        const s = list[i], el = s.el && q(s.el);
+        const r = el && visible(el) ? el.getBoundingClientRect() : null;
+        if (!r) {
+          hole.style.display = 'none'; bg.classList.add('dark');
+          b.style.top = '50%'; b.style.bottom = ''; b.style.transform = 'translateY(-50%)';
+          return;
+        }
+        bg.classList.remove('dark'); hole.style.display = '';
+        Object.assign(hole.style, { left: (r.left - 6) + 'px', top: (r.top - 6) + 'px', width: (r.width + 12) + 'px', height: (r.height + 12) + 'px' });
+        b.style.transform = '';
+        const H = window.innerHeight;
+        if (H - r.bottom >= r.top) { b.style.top = Math.min(r.bottom + 14, H - 160) + 'px'; b.style.bottom = ''; b.style.maxHeight = Math.max(150, H - r.bottom - 30) + 'px'; }
+        else { b.style.bottom = Math.min(H - r.top + 14, H - 160) + 'px'; b.style.top = ''; b.style.maxHeight = Math.max(150, r.top - 30) + 'px'; }
+      }
+      function go(to) {
+        if (to >= list.length) return done();
+        i = Math.max(0, to);
+        const s = list[i], last = i === list.length - 1, el = s.el && q(s.el);
+        b.innerHTML =
+          '<div class="mdqt-h"><b></b><span class="mdqt-n">' + (i + 1) + ' من ' + list.length + '</span>' +
+          '<button class="mdqt-v' + (voice ? '' : ' off') + '" title="' + (voice ? 'اقفل الصوت' : 'شغّل الصوت') + '">' + (voice ? '🔊' : '🔇') + '</button></div>' +
+          '<div class="mdqt-t"></div>' +
+          '<div class="mdqt-f">' + (last ? '' : '<button class="mdqt-skip">تخطي الشرح</button>') + '<span class="sp"></span>' +
+          (i > 0 ? '<button class="mdqt-back">رجوع</button>' : '') +
+          '<button class="mdqt-next' + (last ? ' last' : '') + '">' + (last ? 'تمام، فهمت ✓' : 'التالي') + '</button></div>';
+        b.querySelector('b').textContent = s.t;
+        b.querySelector('.mdqt-t').textContent = s.b;
+        b.querySelector('.mdqt-next').onclick = e => { e.stopPropagation(); go(i + 1); };
+        const bk = b.querySelector('.mdqt-back'); if (bk) bk.onclick = e => { e.stopPropagation(); go(i - 1); };
+        const sk = b.querySelector('.mdqt-skip'); if (sk) sk.onclick = e => { e.stopPropagation(); done(); };
+        b.querySelector('.mdqt-v').onclick = e => {
+          e.stopPropagation(); voice = !voice; lsSet('mdqTourVoice', voice ? '1' : '0');
+          if (voice) speak(s); else hush();
+          go(i);
+        };
+        if (el && visible(el)) { try { el.scrollIntoView({ block: 'center', behavior: 'instant' }); } catch (e) { el.scrollIntoView(); } }
+        place();
+        speak(s);
+      }
+      bg.onclick = () => go(i + 1);
+      window.addEventListener('resize', place);
+      go(0);
+    });
+  }
+
+  window.mdqTour = {
+    screen: null,
+    def(id, steps) { defs[id] = steps; },
+    seen(id) { return lsGet('mdqTour_' + APP + id) === ver(); },
+    start(id) { if (running || !defs[id]) return Promise.resolve(); return run(id, defs[id]); },
+    maybe(id, delay) {
+      if (running || !defs[id] || this.seen(id)) return;
+      setTimeout(() => { if (!running && !this.seen(id)) this.start(id); }, delay == null ? 600 : delay);
+    },
+    // زرار ؟: يعيد شرح الشاشة الحالية
+    helpButton() {
+      const h = document.createElement('button');
+      h.className = 'mdqt-help'; h.type = 'button'; h.textContent = '؟'; h.title = 'اشرحلي الشاشة دي';
+      h.onclick = () => { const id = window.mdqTour.screen && window.mdqTour.screen(); if (id) window.mdqTour.start(id); };
+      document.body.appendChild(h);
+      return h;
+    },
+  };
+})();
+</script>
+<script>
+/* ========== جولات تطبيق تسوية خزنة الدعم ========== */
+(function () {
+  const T = window.mdqTour;
+  T.def('login', [
+    { t: 'تسوية خزنة الدعم 💰', b: 'التطبيق ده بيعكس حركات خزنة «خاص بالدعم» في كل محل بمصروف أو إيراد أو تحويل مقابلها، علشان رصيدها يرجع مظبوط.',
+      s: 'أَهْلًا بِيك في تَطْبيق تَسْوِيَة خَزْنِة الدَّعْم. التَّطْبيق دَه بِيِعْكِس حَرَكات خَزْنِة خاصّ بِالدَّعْم في كُلّ مَحَلّ، بِمَصْروف، أَوْ إيراد، أَوْ تَحْويل مُقابِلْها، عَلَشان رَصيدْها يِرْجَع مَظْبوط.' },
+    { el: '#lName', t: 'الاسم 👤', b: 'اكتب اسمك زي ما اتسجّل.', s: 'الاسْم. اكْتِب اسْمَك، زَيّ ما اتْسَجِّل.' },
+    { el: '#lPass', t: 'كلمة السر 🔑', b: 'اكتب كلمة السر ودوس «دخول».', s: 'كِلْمِة السِّرّ. اكْتِب كِلْمِة السِّرّ، ودُوس دُخول.' },
+    { el: '#installBtn2', t: 'تثبيت التطبيق 📲', b: 'ثبّت التطبيق على الموبايل علشان يفتح زي أي برنامج.', s: 'تَثْبيت التَّطْبيق عَلى المُوبايْل، عَلَشان يِفْتَح زَيّ أَيّ بَرْنامِج.' },
+  ]);
+  T.def('main', [
+    { t: 'تسوية الدعم 💰', b: 'هنعدّي على الشاشة حاجة حاجة. دوس «التالي» أو دوس في أي حتة.',
+      s: 'تَسْوِيَة الدَّعْم. هَنْعَدِّي عَلى الشَّاشَة حاجَة حاجَة. دُوس التَّالي، أَوْ دُوس في أَيّ حِتَّة.' },
+    { el: '.tile.t-q', t: 'الاستفسارات ❓', b: 'حركات التطبيق مش عارف يعكسها لوحده. افتح الكارت، اختار نوع العكس والبند، ودوس «اعتمد».\nولو علّمت «احفظها قاعدة»، أي حركة جاية فيها نفس الكلمة هتتعمل لوحدها.',
+      s: 'الاسْتِفْسارات. دي حَرَكات التَّطْبيق مِش عارِف يِعْكِسْها لِوَحْدُه. افْتَح الكارْت، اخْتار نُوع العَكْس والبَنْد، ودُوس اعْتِمِد. ولَوْ عَلِّمْت احْفَظْها قاعْدَة، أَيّ حَرَكَة جايَّة فيها نَفْس الكِلْمَة، هَتِتْعِمِل لِوَحْدَها.' },
+    { el: '.tile.t-p', t: 'مستني تأكيد ⏳', b: 'الحركات اللي جاهزة تتسجّل في البرنامج. علّم اللي عاوزه ودوس «تأكيد المحدد»، أو «رفض» للي مش عاوزه.',
+      s: 'مِسْتَنّي تَأْكيد. دي الحَرَكات اللي جاهْزَة تِتْسَجِّل في البَرْنامِج. عَلِّم اللي عايْزُه، ودُوس تَأْكيد المُحَدَّد، أَوْ رَفْض لِلّي مِش عايْزُه.' },
+    { el: '.tile.t-d', t: 'اتعمل النهارده ✅', b: 'كل اللي اتسجّل النهارده، واللي اترفض.', s: 'اتْعِمِل النَّهارْدَه. كُلّ اللي اتْسَجِّل النَّهارْدَه، واللي اتْرَفَض.' },
+    { el: '.tile.t-c', t: 'مشاكل الاتصال 🔌', b: 'المحلات اللي الفحص ما وصلش لبرنامجها. دوس «جرّب الفحص تاني».',
+      s: 'مَشاكِل الاتِّصال. المَحَلّات اللي الفَحْص ما وِصِلْش لِبَرْنامِجْها. دُوس جَرَّب الفَحْص تاني.' },
+    { el: '.tile.t-m', t: 'رصيد مش مكفي 💰', b: 'المحلات اللي خزنة التحصيل فيها مش مكفية للتحويلات. المحاسب ينقل الناقص، وبعدها دوس «فحص».',
+      s: 'رَصيد مِش مِكَفّي. المَحَلّات اللي خَزْنِة التَّحْصيل فيها مِش مِكَفّيَة لِلتَّحْويلات. المُحاسِب يِنْقِل النَّاقِص، وبَعْدِها دُوس فَحْص.' },
+    { el: '#q', t: 'البحث 🔎', b: 'دوّر باسم المحل.', s: 'البَحْث. دَوَّر بِاسْم المَحَلّ.' },
+    { el: '#btnScanAll', t: 'فحص الكل 🔄', b: 'بيدخل على برنامج كل محل ويجيب الحركات الجديدة في خزنة الدعم.',
+      s: 'فَحْص الكُلّ. بِيِدْخُل عَلى بَرْنامِج كُلّ مَحَلّ، ويِجيب الحَرَكات الجِديدَة في خَزْنِة الدَّعْم.' },
+    { el: '#board .col', t: 'كارت المحل 🏪', b: 'كل محل ليه عمود: اسمه، وعدد الحركات، ورصيد خزنة الدعم، ولينك البرنامج، وزرار «فحص» للمحل ده بس.',
+      s: 'كارْت المَحَلّ. كُلّ مَحَلّ لِيه عَمود: اسْمُه، وعَدَد الحَرَكات، ورَصيد خَزْنِة الدَّعْم، ولينْك البَرْنامِج، وزُرار فَحْص لِلمَحَلّ دَه بَسّ.' },
+    { el: '#board .card', t: 'الحركة 📄', b: 'دوس على الحركة تفتح تفاصيلها: نوع الإيصال والبيان والملاحظة والوقت.',
+      s: 'الحَرَكَة. دُوس عَلى الحَرَكَة تِفْتَح تَفاصيلْها: نُوع الإيصال، والبَيان، والمُلاحْظَة، والوَقْت.' },
+    { el: '#hbar', t: 'التنقل بين المحلات ↔️', b: 'لو المحلات كتير، اتنقّل بالأسهم دي يمين وشمال.', s: 'التَّنَقُّل بين المَحَلّات. لَوْ المَحَلّات كِتير، اتْنَقِّل بِالأَسْهُم دي يِمين وشِمال.' },
+    { el: '#sheetBtn', t: 'الشيت 📊', b: 'بيفتح شيت التسوية.', s: 'الشِّيت. بِيِفْتَح شيت التَّسْوِيَة.' },
+    { el: '#btnRefresh', t: 'تحديث 🔄', b: 'يجيب آخر حالة من غير فحص.', s: 'تَحْديث. يِجيب آخِر حالَة، مِن غِير فَحْص.' },
+    { el: '#btnOut', t: 'خروج 🚪', b: 'تسجيل خروج.', s: 'تَسْجيل خُروج.' },
+    { t: 'خلاص كده 🎉', b: 'تقدر تعيد الشرح ده في أي وقت من زرار ؟ اللي تحت على الشمال.',
+      s: 'خَلاص كِدَه. تِقْدَر تْعيد الشَّرْح دَه في أَيّ وَقْت، مِن زُرار عَلامِة الاسْتِفْهام، اللي تَحْت عَلى الشِّمال.' },
+  ]);
+
+  const cur = () => ['login', 'main'].find(s => { const e = document.getElementById(s); return e && !e.classList.contains('hidden'); });
+  T.screen = cur;
+  T.helpButton().style.bottom = '76px';
+  const _showLogin = showLogin, _afterLogin = afterLogin;
+  showLogin = function () { _showLogin.apply(this, arguments); T.maybe('login', 2600); };
+  // الرئيسية: بنستنى الكروت تتحمّل
+  afterLogin = function () { _afterLogin.apply(this, arguments); T.maybe('main', 2600); };
+  const c = cur(); if (c) T.maybe(c, 2800);
+})();
+</script>
 </body>
 </html>
